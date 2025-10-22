@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup Pemilik Kost | E-Kost Manager</title>
+  <style>
+    /* Reset dan font */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .auth-container {
+      width: 400px;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #555;
+    }
+
+    input {
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 12px;
+      border: none;
+      background-color: #4CAF50;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    p {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    p a {
+      color: #4CAF50;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* Hidden form step */
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-container">
+    <!-- STEP 1: Signup Pemilik -->
+    <div id="step-signup">
+      <h2>Signup Pemilik Kost</h2>
+      <form id="signupForm">
+        <label for="nama">Nama Pemilik</label>
+        <input type="text" id="nama" name="nama" required>
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+
+        <label for="no_hp">No. HP</label>
+        <input type="text" id="no_hp" name="no_hp" required>
+
+        <button type="submit">Signup</button>
+      </form>
+      <p>Sudah punya akun? <a href="login.html">Login di sini</a></p>
+    </div>
+
+    <!-- STEP 2: Tambah Data Kost -->
+    <div id="step-kost" class="hidden">
+      <h2>Tambah Data Kost</h2>
+      <form id="kostForm">
+        <label for="nama_kost">Nama Kost</label>
+        <input type="text" id="nama_kost" name="nama_kost" required>
+
+        <label for="alamat_kost">Alamat Kost</label>
+        <input type="text" id="alamat_kost" name="alamat_kost" required>
+
+        <label for="jumlah_kamar">Jumlah Kamar</label>
+        <input type="number" id="jumlah_kamar" name="jumlah_kamar" required>
+
+        <label for="harga">Harga per Bulan</label>
+        <input type="number" id="harga" name="harga" required>
+
+        <button type="submit">Simpan Kost</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const signupForm = document.getElementById('signupForm');
+    const kostForm = document.getElementById('kostForm');
+    const stepSignup = document.getElementById('step-signup');
+    const stepKost = document.getElementById('step-kost');
+
+    // Simulasi submit signup
+    signupForm.addEventListener('submit', function(e) {
+      e.preventDefault(); // cegah reload
+      alert('Signup berhasil! Lanjut ke form tambah data kost.');
+      stepSignup.classList.add('hidden');
+      stepKost.classList.remove('hidden');
+    });
+
+    // Simulasi submit data kost
+    kostForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Data kost berhasil disimpan! Anda siap menggunakan E-Kost Manager.');
+      // bisa diarahkan ke dashboard atau halaman lain
+    });
+  </script>
+
+</body>
+</html>
