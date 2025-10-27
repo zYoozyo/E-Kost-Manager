@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Users, Shield, CreditCard, LogIn } from 'lucide-react';
+import { Building2, Users, CreditCard, LogIn, Menu, X } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Initialize AOS
@@ -20,46 +21,76 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-navy-900 text-white">
-      {/* Top Nav */}
-      <nav className="backdrop-blur bg-navy-900/80 border-b border-white/10">
+      {/* Fixed Top Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-navy-900/90 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-accent-500 text-navy-900 font-extrabold">E</span>
-            <span className="font-semibold">Kost Manager</span>
+            <img src="/img/logo.png" alt="Logo" className="h-8 w-15 rounded-md" />
           </div>
+          
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6 text-sm text-white/80">
-            <a className="hover:text-white" href="#features">Beranda</a>
-            <a className="hover:text-white" href="#about">Tentang Kami</a>
-            <a className="hover:text-white" href="#contact">Hubungi Kami</a>
-            <button onClick={() => navigate('/auth/login')} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-1.5 hover:bg-white/10">
+            <a className="hover:text-white transition-colors" href="#features">Beranda</a>
+            <a className="hover:text-white transition-colors" href="#about">Tentang Kami</a>
+            <a className="hover:text-white transition-colors" href="#contact">Hubungi Kami</a>
+            <button onClick={() => navigate('/auth/login')} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-1.5 hover:bg-white/10 transition-colors">
               <LogIn className="w-4 h-4" /> Log In
             </button>
-            <button onClick={() => navigate('/auth/signup')} className="rounded-md bg-accent-500 text-navy-900 px-3 py-1.5 font-semibold hover:bg-accent-400">
+            <button onClick={() => navigate('/auth/signup')} className="rounded-md bg-accent-500 text-navy-900 px-3 py-1.5 font-semibold hover:bg-accent-400 transition-colors">
               Sign Up
             </button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 rounded-md hover:bg-white/10 transition-colors"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-navy-900/95 border-t border-white/10">
+            <div className="px-4 py-4 space-y-4">
+              <a className="block text-white/80 hover:text-white transition-colors" href="#features">Beranda</a>
+              <a className="block text-white/80 hover:text-white transition-colors" href="#about">Tentang Kami</a>
+              <a className="block text-white/80 hover:text-white transition-colors" href="#contact">Hubungi Kami</a>
+              <div className="flex flex-col gap-2 pt-4 border-t border-white/10">
+                <button onClick={() => navigate('/auth/login')} className="inline-flex items-center justify-center gap-2 rounded-md border border-white/20 px-3 py-2 hover:bg-white/10 transition-colors">
+                  <LogIn className="w-4 h-4" /> Log In
+                </button>
+                <button onClick={() => navigate('/auth/signup')} className="rounded-md bg-accent-500 text-navy-900 px-3 py-2 font-semibold hover:bg-accent-400 transition-colors">
+                  Sign Up
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
-      <header className="relative overflow-hidden">
+      <header className="relative overflow-hidden pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div data-aos="fade-right">
               <p className="text-accent-400 font-semibold tracking-wide mb-3">Web Manajemen Kos & Properti</p>
-              <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-4">
                 Kelola Kos Anda Lebih Mudah dan Untung.
                 <span className="block text-accent-400">Nikmati Kemudahan Digital!</span>
               </h1>
-              <p className="text-white/80 mb-8 max-w-xl">
+              <p className="text-white/80 mb-8 max-w-xl text-sm sm:text-base">
                 Pantau penghuni, kelola keuangan, dan maksimalkan keuntungan, semua dalam satu genggaman.
               </p>
-              <div className="flex gap-3">
-                <button onClick={() => navigate('/auth/login')} className="rounded-lg bg-accent-500 text-navy-900 px-5 py-3 font-semibold hover:bg-accent-400">Mulai Sekarang</button>
-                <a href="#features" className="rounded-lg border border-white/20 px-5 py-3 font-semibold hover:bg-white/10">Pelajari Fitur</a>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button onClick={() => navigate('/auth/login')} className="rounded-lg bg-accent-500 text-navy-900 px-5 py-3 font-semibold hover:bg-accent-400 transition-colors">Mulai Sekarang</button>
+                <a href="#features" className="rounded-lg border border-white/20 px-5 py-3 font-semibold hover:bg-white/10 transition-colors text-center">Pelajari Fitur</a>
               </div>
             </div>
-            <div className="rounded-xl bg-white/5 border border-white/10 aspect-video" data-aos="fade-left" />
+            <div className="rounded-xl bg-white/5 border border-white/10 aspect-video overflow-hidden" data-aos="fade-left">
+            <img src="/img/kost-image.png" alt="Kost Image" className="w-full h-full object-cover" />
+            </div>
           </div>
         </div>
       </header>
@@ -67,27 +98,27 @@ export const LoginPage: React.FC = () => {
       {/* Features */}
       <section id="features" className="bg-navy-900/60 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10" data-aos="fade-up" data-aos-delay="100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors" data-aos="fade-up" data-aos-delay="100">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-500/20 text-accent-400 mb-4">
                 <Building2 className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Manajemen Kost</h3>
-              <p className="text-white/70">Kelola data kost, kamar, dan fasilitas dengan mudah melalui dashboard admin</p>
+              <p className="text-white/70 text-sm sm:text-base">Kelola data kost, kamar, dan fasilitas dengan mudah melalui dashboard admin</p>
             </div>
-            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10" data-aos="fade-up" data-aos-delay="200">
+            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors" data-aos="fade-up" data-aos-delay="200">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-500/20 text-accent-400 mb-4">
                 <Users className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Dashboard Penyewa</h3>
-              <p className="text-white/70">Penyewa dapat melihat informasi kost, melakukan pembayaran, dan melaporkan masalah</p>
+              <p className="text-white/70 text-sm sm:text-base">Penyewa dapat melihat informasi kost, melakukan pembayaran, dan melaporkan masalah</p>
             </div>
-            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10" data-aos="fade-up" data-aos-delay="300">
+            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors sm:col-span-2 lg:col-span-1" data-aos="fade-up" data-aos-delay="300">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-500/20 text-accent-400 mb-4">
                 <CreditCard className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Pembayaran Digital</h3>
-              <p className="text-white/70">Sistem pembayaran terintegrasi untuk memudahkan transaksi sewa kost</p>
+              <p className="text-white/70 text-sm sm:text-base">Sistem pembayaran terintegrasi untuk memudahkan transaksi sewa kost</p>
             </div>
           </div>
         </div>
@@ -111,7 +142,9 @@ export const LoginPage: React.FC = () => {
                 </p>
               </div>
             </div>
-            <div data-aos="fade-left" className="rounded-xl bg-navy-900/5 border border-navy-900/10 aspect-video" />
+            <div className="rounded-xl bg-white/5 border border-white/10 aspect-video overflow-hidden" data-aos="fade-left">
+  <img src="/img/kost-image.png" alt="Kost Image" className="w-full h-full object-cover" />
+</div>
           </div>
         </div>
       </section>

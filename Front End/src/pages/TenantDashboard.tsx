@@ -136,6 +136,41 @@ export const TenantDashboard: React.FC = () => {
         </header>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Welcome Section */}
+          {activeTab === 'overview' && (
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              {/* Welcome Card */}
+              <div className="bg-white rounded-xl shadow-sm p-6" data-aos="fade-up">
+                <div className="flex items-center mb-4">
+                  <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center mr-4">
+                    <User className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Selamat Datang</h2>
+                    <p className="text-lg font-semibold text-gray-900">Budi</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Terima kasih sudah menjadi bagian dari mawar kos
+                </p>
+              </div>
+
+              {/* Room Card */}
+              <div className="md:col-span-2 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-xl shadow-lg p-6" data-aos="fade-up" data-aos-delay="100">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-navy-900 mb-1">Kamar Mawar</h3>
+                  <p className="text-4xl font-bold text-navy-900">No. 1</p>
+                </div>
+                <div className="flex items-center justify-between mt-6">
+                  <div>
+                    <p className="text-sm font-medium text-navy-900">Jatuh tempo: 1 Nov 2025</p>
+                  </div>
+                  <Home className="w-8 h-8 text-navy-900" />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* My Kost Info */}
           <div className="bg-white rounded-xl shadow-sm p-6 mb-8" data-aos="fade-up">
             <div className="flex justify-between items-start mb-4">
@@ -271,30 +306,59 @@ export const TenantDashboard: React.FC = () => {
               {activeTab === 'payments' && (
                 <div data-aos="fade-up">
                   <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Riwayat Pembayaran</h3>
-                    <button className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center">
-                      <CreditCard className="w-4 h-4 mr-2" />
+                    <h2 className="text-2xl font-bold text-gray-900">Pembayaran</h2>
+                    <button className="bg-yellow-400 hover:bg-yellow-500 text-navy-900 px-4 py-2 rounded-lg font-semibold transition-colors flex items-center">
+                      <Plus className="w-4 h-4 mr-2" />
                       Bayar Sekarang
                     </button>
                   </div>
-                  <div className="space-y-4">
-                    {paymentHistory.map((payment) => (
-                      <div key={payment.id} className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h4 className="font-medium text-gray-900">{payment.month}</h4>
-                            <p className="text-sm text-gray-500">{payment.method} • {payment.date}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-gray-900">Rp {payment.amount.toLocaleString('id-ID')}</p>
-                            <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(payment.status)}`}>
-                              {getStatusIcon(payment.status)}
-                              <span className="ml-1">{payment.status}</span>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="border-b-2 border-gray-200">
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-900">No Faktur</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-900">Periode Sewa</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-900">Tanggal Jatuh Tempo</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-900">Status</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-900">Jumlah</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-900">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b border-gray-200">
+                          <td className="py-3 px-4 text-sm text-gray-900">M1-001-123</td>
+                          <td className="py-3 px-4 text-sm text-gray-700">1 Sept-30 Sept 2025</td>
+                          <td className="py-3 px-4 text-sm text-gray-700">30 Sept 2025</td>
+                          <td className="py-3 px-4">
+                            <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              Lunas
                             </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                          </td>
+                          <td className="py-3 px-4 text-sm font-semibold text-gray-900">Rp.650.000,00</td>
+                          <td className="py-3 px-4">
+                            <button className="bg-yellow-400 hover:bg-yellow-500 text-navy-900 px-3 py-1 rounded text-xs font-semibold">
+                              Cetak
+                            </button>
+                          </td>
+                        </tr>
+                        <tr className="border-b border-gray-200">
+                          <td className="py-3 px-4 text-sm text-gray-900">M1-001-124</td>
+                          <td className="py-3 px-4 text-sm text-gray-700">1 Okt-30 Okt 2025</td>
+                          <td className="py-3 px-4 text-sm text-gray-700">30 Okt 2025</td>
+                          <td className="py-3 px-4">
+                            <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                              Belum
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-sm font-semibold text-gray-900">Rp.650.000,00</td>
+                          <td className="py-3 px-4">
+                            <button className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-semibold">
+                              Bayar
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
@@ -302,61 +366,76 @@ export const TenantDashboard: React.FC = () => {
               {activeTab === 'complaints' && (
                 <div data-aos="fade-up">
                   <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Pengaduan Saya</h3>
-                    <button className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center">
+                    <h2 className="text-2xl font-bold text-gray-900">Aduan</h2>
+                    <button className="bg-yellow-400 hover:bg-yellow-500 text-navy-900 px-4 py-2 rounded-lg font-semibold transition-colors flex items-center">
                       <Plus className="w-4 h-4 mr-2" />
-                      Buat Pengaduan
+                      Tulis Aduan
                     </button>
                   </div>
-                  <div className="space-y-4">
-                    {myComplaints.map((complaint) => (
-                      <div key={complaint.id} className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-medium text-gray-900">{complaint.title}</h4>
-                          <div className="flex space-x-2">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(complaint.status)}`}>
-                              {complaint.status}
-                            </span>
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(complaint.priority)}`}>
-                              {complaint.priority}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{complaint.description}</p>
-                        <div className="flex justify-between items-center">
-                          <p className="text-xs text-gray-500">{complaint.date}</p>
-                          <button className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center">
-                            <MessageSquare className="w-4 h-4 mr-1" />
-                            Lihat Detail
-                          </button>
-                        </div>
+                  
+                  {/* Add Complaint Form */}
+                  <div className="mb-8 bg-gray-50 rounded-lg p-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Penyewa 1</label>
+                        <textarea 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent resize-none"
+                          rows={3}
+                          placeholder="(isi aduan)"
+                        />
                       </div>
-                    ))}
+                      <div className="flex justify-end">
+                        <button className="bg-yellow-400 hover:bg-yellow-500 text-navy-900 px-6 py-2 rounded-lg font-semibold transition-colors">
+                          Kirim Aduan
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Complaint List */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Aduan anda</h3>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="font-medium text-gray-900">Penyewa 1</p>
+                      <p className="text-sm text-gray-600 mt-2">(isi aduan)</p>
+                    </div>
                   </div>
                 </div>
               )}
 
               {activeTab === 'profile' && (
                 <div data-aos="fade-up">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-6">Profil Saya</h3>
-                  <div className="max-w-md">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                        <input type="text" value={user?.name || ''} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" readOnly />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" value={user?.email || ''} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" readOnly />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
-                        <input type="tel" value={user?.phone || ''} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" readOnly />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                        <input type="text" value="Penyewa" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" readOnly />
-                      </div>
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">Profil</h2>
+                    <button className="text-gray-400 hover:text-gray-600">
+                      <Eye className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nama</label>
+                      <input type="text" value="Budi" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" readOnly />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                      <input type="text" value="BudiMawar1" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" readOnly />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input type="email" value="BudiPeksa1234@gmail.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" readOnly />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nomor WhatsApp</label>
+                      <input type="tel" value="+62 812 345 6789" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" readOnly />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                      <input type="text" value="Jl. Pondok Gede Desa Sawit Kecamatan Sawit Timur Kabupaten Ngasal, Jawa. 56789" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" readOnly />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <input type="password" value="budbud1234" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" readOnly />
                     </div>
                   </div>
                 </div>
