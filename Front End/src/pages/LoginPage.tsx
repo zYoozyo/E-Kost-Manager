@@ -1,31 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, Users, CreditCard, LogIn, Menu, X } from 'lucide-react';
+import AOS from 'aos';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    let resizeHandler: (() => void) | null = null;
+    
     // Initialize AOS
-    const initAOS = async () => {
-      const AOS = (await import('aos')).default;
+    try {
+      // Initialize AOS
       AOS.init({
-        duration: 800,
-        easing: 'ease-in-out',
-        once: true,
+        duration: 1000,
+        easing: 'ease-out-cubic',
+        once: false, // Allow animation to repeat on scroll back up
+        offset: 50,
+        delay: 0,
+        disable: false,
+        startEvent: 'DOMContentLoaded',
       });
+      
+      // Refresh AOS after DOM is ready
+      setTimeout(() => {
+        AOS.refresh();
+      }, 100);
+      
+      // Refresh on window resize to handle responsive changes
+      resizeHandler = () => {
+        AOS.refresh();
+      };
+      window.addEventListener('resize', resizeHandler);
+      
+      // Also refresh after a longer delay to catch any late-rendered content
+      setTimeout(() => {
+        AOS.refresh();
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error initializing AOS:', error);
+    }
+    
+    // Cleanup
+    return () => {
+      if (resizeHandler) {
+        window.removeEventListener('resize', resizeHandler);
+      }
     };
-    initAOS();
   }, []);
 
   return (
     <div className="min-h-screen bg-navy-900 text-white">
       {/* Fixed Top Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-navy-900/90 border-b border-white/10">
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-navy-900/90 border-b border-white/10" data-aos="fade-down">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <img src="/img/logo.png" alt="Logo" className="h-8 w-15 rounded-md" />
+            <img src="/img/logo.png" alt="Logo" className="h-8 w-15 rounded-md" data-aos="zoom-in" data-aos-delay="100" />
           </div>
           
           {/* Desktop Navigation */}
@@ -74,22 +106,22 @@ export const LoginPage: React.FC = () => {
       <header className="relative overflow-hidden pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
           <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div data-aos="fade-right">
-              <p className="text-accent-400 font-semibold tracking-wide mb-3">Web Manajemen Kos & Properti</p>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-4">
+            <div data-aos="fade-right" data-aos-duration="1000">
+              <p className="text-accent-400 font-semibold tracking-wide mb-3" data-aos="fade-up" data-aos-delay="100">Web Manajemen Kos & Properti</p>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-4" data-aos="fade-up" data-aos-delay="200">
                 Kelola Kos Anda Lebih Mudah dan Untung.
-                <span className="block text-accent-400">Nikmati Kemudahan Digital!</span>
+                <span className="block text-accent-400" data-aos="fade-up" data-aos-delay="300">Nikmati Kemudahan Digital!</span>
               </h1>
-              <p className="text-white/80 mb-8 max-w-xl text-sm sm:text-base">
+              <p className="text-white/80 mb-8 max-w-xl text-sm sm:text-base" data-aos="fade-up" data-aos-delay="400">
                 Pantau penghuni, kelola keuangan, dan maksimalkan keuntungan, semua dalam satu genggaman.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button onClick={() => navigate('/auth/login')} className="rounded-lg bg-accent-500 text-navy-900 px-5 py-3 font-semibold hover:bg-accent-400 transition-colors">Mulai Sekarang</button>
-                <a href="#features" className="rounded-lg border border-white/20 px-5 py-3 font-semibold hover:bg-white/10 transition-colors text-center">Pelajari Fitur</a>
+              <div className="flex flex-col sm:flex-row gap-3" data-aos="fade-up" data-aos-delay="500">
+                <button onClick={() => navigate('/auth/login')} className="rounded-lg bg-accent-500 text-navy-900 px-5 py-3 font-semibold hover:bg-accent-400 transition-colors transform hover:scale-105">Mulai Sekarang</button>
+                <a href="#features" className="rounded-lg border border-white/20 px-5 py-3 font-semibold hover:bg-white/10 transition-colors text-center transform hover:scale-105">Pelajari Fitur</a>
               </div>
             </div>
-            <div className="rounded-xl bg-white/5 border border-white/10 aspect-video overflow-hidden" data-aos="fade-left">
-            <img src="/img/kost-image.png" alt="Kost Image" className="w-full h-full object-cover" />
+            <div className="rounded-xl bg-white/5 border border-white/10 aspect-video overflow-hidden" data-aos="fade-left" data-aos-delay="300">
+              <img src="/img/kost-image.png" alt="Kost Image" className="w-full h-full object-cover" data-aos="zoom-in" data-aos-delay="500" />
             </div>
           </div>
         </div>
@@ -98,23 +130,27 @@ export const LoginPage: React.FC = () => {
       {/* Features */}
       <section id="features" className="bg-navy-900/60 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12" data-aos="fade-up">
+            <h2 className="text-3xl font-bold text-white mb-4">Fitur Unggulan</h2>
+            <p className="text-white/70">Solusi lengkap untuk manajemen kost modern</p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors" data-aos="fade-up" data-aos-delay="100">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-500/20 text-accent-400 mb-4">
+            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all transform hover:scale-105 hover:shadow-lg" data-aos="flip-left" data-aos-delay="100">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-500/20 text-accent-400 mb-4" data-aos="zoom-in" data-aos-delay="200">
                 <Building2 className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Manajemen Kost</h3>
               <p className="text-white/70 text-sm sm:text-base">Kelola data kost, kamar, dan fasilitas dengan mudah melalui dashboard admin</p>
             </div>
-            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors" data-aos="fade-up" data-aos-delay="200">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-500/20 text-accent-400 mb-4">
+            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all transform hover:scale-105 hover:shadow-lg" data-aos="flip-left" data-aos-delay="200">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-500/20 text-accent-400 mb-4" data-aos="zoom-in" data-aos-delay="300">
                 <Users className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Dashboard Penyewa</h3>
               <p className="text-white/70 text-sm sm:text-base">Penyewa dapat melihat informasi kost, melakukan pembayaran, dan melaporkan masalah</p>
             </div>
-            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors sm:col-span-2 lg:col-span-1" data-aos="fade-up" data-aos-delay="300">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-500/20 text-accent-400 mb-4">
+            <div className="text-center p-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all transform hover:scale-105 hover:shadow-lg sm:col-span-2 lg:col-span-1" data-aos="flip-left" data-aos-delay="300">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-500/20 text-accent-400 mb-4" data-aos="zoom-in" data-aos-delay="400">
                 <CreditCard className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Pembayaran Digital</h3>
@@ -127,24 +163,29 @@ export const LoginPage: React.FC = () => {
       {/* About Us */}
       <section id="about" className="bg-white text-navy-900 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12" data-aos="fade-up">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-12" data-aos="fade-up" data-aos-duration="800">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4" data-aos="zoom-in" data-aos-delay="100">
               Tentang Kami
             </h2>
+            <p className="text-gray-600" data-aos="fade-up" data-aos-delay="200">Platform manajemen kost terpercaya</p>
           </div>
           <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div data-aos="fade-right">
+            <div data-aos="fade-right" data-aos-delay="100">
               <div className="space-y-4">
-                <p className="text-gray-700">
+                <p className="text-gray-700" data-aos="fade-up" data-aos-delay="200">
                   E-Kost Manager adalah platform manajemen kost yang memudahkan pemilik dan penyewa dalam satu sistem terintegrasi.
+                </p>
+                <p className="text-gray-700" data-aos="fade-up" data-aos-delay="300">
                   Kami berkomitmen untuk memberikan solusi terbaik dalam mengelola properti kost dengan teknologi modern dan user-friendly.
+                </p>
+                <p className="text-gray-700" data-aos="fade-up" data-aos-delay="400">
                   Fokus kami adalah kemudahan penggunaan, transparansi pembayaran, dan efisiensi operasional properti untuk semua pengguna.
                 </p>
               </div>
             </div>
-            <div className="rounded-xl bg-white/5 border border-white/10 aspect-video overflow-hidden" data-aos="fade-left">
-  <img src="/img/kost-image.png" alt="Kost Image" className="w-full h-full object-cover" />
-</div>
+            <div className="rounded-xl bg-white/5 border border-white/10 aspect-video overflow-hidden" data-aos="fade-left" data-aos-delay="200">
+              <img src="/img/kost-image.png" alt="Kost Image" className="w-full h-full object-cover" data-aos="zoom-in" data-aos-delay="400" />
+            </div>
           </div>
         </div>
       </section>
@@ -207,41 +248,47 @@ export const LoginPage: React.FC = () => {
       {/* Contact */}
       <section id="contact" className="bg-white text-navy-900 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12" data-aos="fade-up">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4" data-aos="zoom-in" data-aos-delay="100">Hubungi Kami</h2>
+            <p className="text-gray-600" data-aos="fade-up" data-aos-delay="200">Kami siap membantu Anda</p>
+          </div>
           <div className="grid md:grid-cols-2 gap-8">
-            <div data-aos="fade-right">
-              <h3 className="text-2xl font-bold mb-4">Hubungi Kami</h3>
+            <div data-aos="fade-right" data-aos-delay="100">
+              <h3 className="text-2xl font-bold mb-4" data-aos="fade-up" data-aos-delay="200">Informasi Kontak</h3>
               <div className="space-y-4 text-gray-700">
-                <p><strong>Email:</strong> support@ekostmanager.com</p>
-                <p><strong>Telepon:</strong> +62 812 3456 7890</p>
-                <p><strong>Alamat:</strong> Jakarta, Indonesia</p>
+                <p data-aos="fade-up" data-aos-delay="300"><strong>Email:</strong> support@ekostmanager.com</p>
+                <p data-aos="fade-up" data-aos-delay="400"><strong>Telepon:</strong> +62 812 3456 7890</p>
+                <p data-aos="fade-up" data-aos-delay="500"><strong>Alamat:</strong> Jakarta, Indonesia</p>
               </div>
-              <div className="mt-6 h-40 rounded-xl bg-navy-900/5 border border-navy-900/10" />
+              <div className="mt-6 h-40 rounded-xl bg-navy-900/5 border border-navy-900/10" data-aos="zoom-in" data-aos-delay="600" />
             </div>
-            <div data-aos="fade-left">
+            <div data-aos="fade-left" data-aos-delay="200">
               <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                <div>
+                <div data-aos="fade-up" data-aos-delay="300">
                   <input 
-                    className="w-full rounded-md border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-accent-500 focus:border-transparent" 
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-all" 
                     placeholder="Nama" 
                     type="text"
                   />
                 </div>
-                <div>
+                <div data-aos="fade-up" data-aos-delay="400">
                   <input 
-                    className="w-full rounded-md border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-accent-500 focus:border-transparent" 
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-all" 
                     placeholder="Email" 
                     type="email" 
                   />
                 </div>
-                <div>
+                <div data-aos="fade-up" data-aos-delay="500">
                   <textarea 
-                    className="w-full rounded-md border border-gray-300 px-4 py-3 h-32 focus:ring-2 focus:ring-accent-500 focus:border-transparent" 
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 h-32 focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-all" 
                     placeholder="Pesan" 
                   />
                 </div>
-                <button className="w-full bg-accent-500 text-navy-900 px-5 py-3 font-semibold rounded-md hover:bg-accent-400 transition-colors">
-                  Kirim
-                </button>
+                <div data-aos="fade-up" data-aos-delay="600">
+                  <button className="w-full bg-accent-500 text-navy-900 px-5 py-3 font-semibold rounded-md hover:bg-accent-400 transition-all transform hover:scale-105">
+                    Kirim
+                  </button>
+                </div>
               </form>
               <div className="mt-4 text-sm text-gray-600">
                 <p>
@@ -258,9 +305,9 @@ export const LoginPage: React.FC = () => {
 
 
       {/* Footer */}
-      <footer className="bg-navy-800 border-t border-white/10 text-white py-8">
+      <footer className="bg-navy-800 border-t border-white/10 text-white py-8" data-aos="fade-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-white/60">© 2025 E-Kost Manager. Semua hak cipta dilindungi.</p>
+          <p className="text-white/60" data-aos="fade-up" data-aos-delay="100">© 2025 E-Kost Manager. Semua hak cipta dilindungi.</p>
         </div>
       </footer>
     </div>

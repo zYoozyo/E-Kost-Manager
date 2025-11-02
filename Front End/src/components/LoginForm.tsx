@@ -13,7 +13,7 @@ interface LoginFormProps {
 export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'admin' | 'tenant'>('tenant');
-  const { login, isLoading } = useAuth();
+  const { login, demoLogin, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const {
@@ -33,6 +33,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Login gagal');
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    try {
+      await demoLogin(selectedRole);
+      toast.success(`Login demo berhasil sebagai ${selectedRole === 'admin' ? 'Pemilik' : 'Penyewa'}!`);
+      if (selectedRole === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/tenant');
+      }
+    } catch (error: any) {
+      toast.error('Login demo gagal');
     }
   };
 
@@ -132,6 +146,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
             {isLoading ? 'Memproses...' : 'Masuk'}
           </button>
         </form>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">atau</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleDemoLogin}
+          disabled={isLoading}
+          className="w-full bg-yellow-400 hover:bg-yellow-500 text-navy-900 py-3 px-4 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? 'Memproses...' : 'Login Demo'}
+        </button>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">

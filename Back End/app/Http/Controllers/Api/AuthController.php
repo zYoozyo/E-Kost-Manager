@@ -11,28 +11,36 @@ use Illuminate\Support\Facades\Hash;
 class AuthController extends Controller
 {
     // ============================
-    // REGISTER
+    // SIGNUP
     // ============================
-    public function register(Request $request)
+    public function signup(Request $request)
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            // 🔹 tambahkan admin ke daftar role yang valid
-            'role' => 'required|in:pemilik,penyewa,admin',
+            'phone' => 'required|string|max:20',
+            'access_code' => 'required|string',
+            'role' => 'required|in:admin,tenant',
         ]);
 
         $user = User::create([
             'name' => $validatedData['name'],
             'email' => $validatedData['email'],
             'password' => Hash::make($validatedData['password']),
+            'phone' => $validatedData['phone'],
             'role' => $validatedData['role'],
         ]);
 
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
-            'message' => 'Registrasi berhasil',
-            'user' => $user,
+            'success' => true,
+            'message' => 'Pendaftaran berhasil',
+            'data' => [
+                'user' => $user,
+                'token' => $token,
+            ],
         ], 201);
     }
 
@@ -41,19 +49,40 @@ class AuthController extends Controller
     // ============================
     public function login(Request $request)
     {
+        $validatedData = $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+            'role' => 'required|in:admin,tenant',
+        ]);
+
         $credentials = $request->only('email', 'password');
 
         if (!Auth::attempt($credentials)) {
-            return response()->json(['message' => 'Email atau Password salah'], 401);
+            return response()->json([
+                'success' => false,
+                'message' => 'Email atau Password salah'
+            ], 401);
         }
 
         $user = User::where('email', $request->email)->firstOrFail();
+
+        // Check if role matches
+        if ($user->role !== $validatedData['role']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role tidak sesuai'
+            ], 401);
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
+            'success' => true,
+            'message' => 'Login berhasil',
+            'data' => [
+                'user' => $user,
+                'token' => $token,
+            ],
         ]);
     }
 
@@ -66,20 +95,43 @@ class AuthController extends Controller
             $user = $request->user();
 
             if (!$user) {
-                return response()->json(['message' => 'User tidak ditemukan'], 404);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User tidak ditemukan'
+                ], 404);
             }
 
             if ($user->currentAccessToken()) {
                 $user->currentAccessToken()->delete();
-                return response()->json(['message' => 'Logout berhasil']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Logout berhasil'
+                ]);
             } else {
-                return response()->json(['message' => 'Token tidak ditemukan atau sudah logout'], 400);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token tidak ditemukan atau sudah logout'
+                ], 400);
             }
         } catch (\Exception $e) {
             return response()->json([
+                'success' => false,
                 'message' => 'Terjadi kesalahan server',
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    // ============================
+    // PROFILE
+    // ============================
+    public function profile(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+        ]);
     }
 }

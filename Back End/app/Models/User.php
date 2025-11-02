@@ -16,10 +16,16 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'phone',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 }

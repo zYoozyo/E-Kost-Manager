@@ -1,0 +1,51 @@
+═══════════════════════════════════════════════════════════════
+              MASALAH DAN SOLUSINYA
+═══════════════════════════════════════════════════════════════
+
+ERROR: "Could not open input file: artisan"
+
+MASALAH:
+  Terminal Anda ada di D:\laragon\www (folder salah!)
+  Project ada di: C:\Users\USER\OneDrive\Desktop\E-Kost Manager\Back End
+
+═══════════════════════════════════════════════════════════════
+  SOLUSI PALING MUDAH:
+═══════════════════════════════════════════════════════════════
+
+CARA 1 (LEBIH MUDAH):
+    1. Buka File Explorer
+    2. Navigate ke: 
+       C:\Users\USER\OneDrive\Desktop\E-Kost Manager\Back End
+    3. Double-click file: RUN_SERVER.bat
+    4. Selesai!
+
+CARA 2 (MANUAL):
+    1. Buka Command Prompt (cmd)
+    2. Ketik perintah ini:
+
+        cd "C:\Users\USER\OneDrive\Desktop\E-Kost Manager\Back End"
+        php artisan serve --port=8080
+
+═══════════════════════════════════════════════════════════════
+  CARA TERBAIK (PAKAI LARAGON):
+═══════════════════════════════════════════════════════════════
+
+1. Buka Laragon
+2. Di menu kanan Laragon, cari folder "E-Kost Manager"
+3. KLIK KANAN pada folder tersebut
+4. Pilih "Open in Terminal"
+5. Ketik:
+   
+   cd "Back End"
+   php artisan serve --port=8080
+
+═══════════════════════════════════════════════════════════════
+
+PENTING: 
+- Jangan buka terminal di D:\laragon\www
+- Buka terminal di folder Back End
+- Atau pakai file RUN_SERVER.bat
+
+═══════════════════════════════════════════════════════════════
+
+

@@ -1,0 +1,35 @@
+═══════════════════════════════════════════════════════════════
+    CARA PALING MUDAH MENJALANKAN BACKEND
+═══════════════════════════════════════════════════════════════
+
+✅ Anda TIDAK perlu install Laravel lagi!
+✅ Composer sudah ada di Laragon
+✅ Database sudah dikonfigurasi (SQLite)
+
+═══════════════════════════════════════════════════════════════
+  LANGKAH-LANGKAH:
+═══════════════════════════════════════════════════════════════
+
+CARA 1 (TERMUDAH):
+   1. Double-click file: "Back End\START.bat"
+   2. Selesai! Server jalan di http://localhost:8080
+
+CARA 2 (VIA LARAGON):
+   1. Buka Laragon → Start All
+   2. Klik kanan folder project → Terminal
+   3. Ketik: php artisan serve --port=8080
+
+═══════════════════════════════════════════════════════════════
+  JALANKAN FRONTEND:
+═══════════════════════════════════════════════════════════════
+
+Buka terminal baru:
+   cd "Front End"
+   npm run dev
+
+Buka browser: http://localhost:5173
+
+═══════════════════════════════════════════════════════════════
+
+Jika masih error, baca: SOLUSI_ERROR.md
+

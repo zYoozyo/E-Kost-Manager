@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://unpkg.com/aos@2.3.4/dist/aos.css');
 
 @tailwind base;
 @tailwind components;
@@ -34,14 +35,8 @@ body {
   background: #a8a8a8;
 }
 
-/* AOS Animation Overrides */
-[data-aos] {
-  pointer-events: none;
-}
-
-[data-aos].aos-animate {
-  pointer-events: auto;
-}
+/* AOS Animation - Let AOS handle visibility naturally */
+/* Elements will be visible by default, AOS will animate them */
 
 /* Custom animations */
 @keyframes fadeInUp {

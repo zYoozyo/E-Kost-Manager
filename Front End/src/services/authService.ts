@@ -8,7 +8,7 @@ export const authService = {
       password,
       role,
     });
-    return response.data as LoginResponse;
+    return response.data.data as LoginResponse;
   },
 
   async signup(data: SignupFormData) {
@@ -18,7 +18,7 @@ export const authService = {
 
   async getProfile(): Promise<User> {
     const response = await api.get('/auth/profile');
-    return response.data as User;
+    return response.data.data as User;
   },
 
   async logout() {

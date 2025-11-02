@@ -1,0 +1,49 @@
+═══════════════════════════════════════════════════════════════
+         CARANYA CEPET - BACKEND ERROR PORT
+═══════════════════════════════════════════════════════════════
+
+ERROR: "Failed to listen on 127.0.0.1:8000"
+SOLUSI: Gunakan port 8080 (bukan 8000)
+
+═══════════════════════════════════════════════════════════════
+  LANGKAH:
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Double-click file ini
+   📁 Back End\JALANKAN_SEKARANG.bat
+   
+   Server akan jalan di: http://localhost:8080
+
+STEP 2: Update Frontend .env
+   
+   Buka file: Front End\.env
+   
+   Pastikan isinya:
+      VITE_API_URL=http://localhost:8080/api
+   
+   Kalau belum ada, BUAT file .env dari .env.example:
+      copy Front End\.env.example Front End\.env
+
+STEP 3: Jalankan Frontend
+   
+   Buka terminal di folder: Front End
+   
+   Ketik:
+      npm run dev
+   
+   Frontend akan jalan di: http://localhost:5173
+
+═══════════════════════════════════════════════════════════════
+  SEMUA FILE:
+═══════════════════════════════════════════════════════════════
+
+✅ Backend: http://localhost:8080/api
+✅ Frontend: http://localhost:5173
+
+Buka browser → http://localhost:5173
+Coba login!
+
+═══════════════════════════════════════════════════════════════
+
+
+

@@ -67,6 +67,7 @@ export interface Complaint {
 export interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, role: 'admin' | 'tenant') => Promise<void>;
+  demoLogin: (role: 'admin' | 'tenant') => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
