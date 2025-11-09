@@ -5,9 +5,12 @@ export interface LoginResponse {
 export interface User {
   id: number;
   name: string;
+  username?: string;
   email: string;
   role: 'admin' | 'tenant' | 'owner';
   phone?: string;
+  whatsapp?: string;
+  address?: string;
   avatar?: string;
   created_at: string;
   updated_at: string;
@@ -28,10 +31,22 @@ export interface Kost {
   updated_at: string;
 }
 
+export interface RoomType {
+  id: number;
+  name: string;
+  price: number;
+  facilities: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Room {
   id: number;
   kost_id: number;
   room_number: string;
+  room_type_id?: number;
+  room_type?: RoomType;
   price: number;
   is_available: boolean;
   tenant_id?: number;

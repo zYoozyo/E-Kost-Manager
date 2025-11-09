@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { useLocation } from 'react-router-dom';
 import InviteTenant from '../components/InviteTenant';
+import { ProfileSection } from '../components/ProfileSection';
 
 export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -130,6 +131,7 @@ export const AdminDashboard: React.FC = () => {
               <nav className="flex space-x-8 px-6">
                 {[
                   { id: 'overview', name: 'Overview' },
+                  { id: 'profile', name: 'Profil' },
                   { id: 'kosts', name: 'Kost' },
                   { id: 'tenants', name: 'Penyewa' },
                 ].map((tab) => (
@@ -171,6 +173,16 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeTab === 'profile' && user && (
+                <ProfileSection 
+                  user={user} 
+                  onUpdate={(updatedUser) => {
+                    // Update user in context if needed
+                    // The ProfileSection already handles this via useAuth
+                  }}
+                />
               )}
             </div>
           </div>

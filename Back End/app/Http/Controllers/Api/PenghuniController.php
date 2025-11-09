@@ -13,12 +13,8 @@ class PenghuniController extends Controller
      */
     public function index()
     {
-        $penghunis = Penghuni::all();
-        
-        return response()->json([
-            'success' => true,
-            'data' => $penghunis,
-        ]);
+        // Mengambil semua data dari model Penghuni
+        return Penghuni::all();
     }
 
     /**
@@ -26,19 +22,18 @@ class PenghuniController extends Controller
      */
     public function store(Request $request)
     {
+        // Validasi data yang masuk
         $request->validate([
             'nama_lengkap' => 'required|string|max:255',
             'nomor_telepon' => 'required|string',
-            'email' => 'required|email|unique:penghuni',
+            'email' => 'required|email|unique:penghunis',
         ]);
 
+        // Membuat data baru
         $penghuni = Penghuni::create($request->all());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Penghuni berhasil ditambahkan',
-            'data' => $penghuni,
-        ], 201);
+        // Mengembalikan data yang baru dibuat dengan status 201 (Created)
+        return response()->json($penghuni, 201);
     }
 
     /**
@@ -46,10 +41,8 @@ class PenghuniController extends Controller
      */
     public function show(Penghuni $penghuni)
     {
-        return response()->json([
-            'success' => true,
-            'data' => $penghuni,
-        ]);
+        // Laravel secara otomatis akan mencari penghuni berdasarkan ID
+        return $penghuni;
     }
 
     /**
@@ -57,19 +50,18 @@ class PenghuniController extends Controller
      */
     public function update(Request $request, Penghuni $penghuni)
     {
+        // Validasi data yang masuk
         $request->validate([
             'nama_lengkap' => 'string|max:255',
             'nomor_telepon' => 'string',
-            'email' => 'email|unique:penghuni,email,' . $penghuni->id,
+            'email' => 'email|unique:penghunis,email,' . $penghuni->id,
         ]);
 
+        // Memperbarui data
         $penghuni->update($request->all());
         
-        return response()->json([
-            'success' => true,
-            'message' => 'Penghuni berhasil diperbarui',
-            'data' => $penghuni,
-        ]);
+        // Mengembalikan data yang sudah diperbarui
+        return response()->json($penghuni);
     }
 
     /**
@@ -77,11 +69,10 @@ class PenghuniController extends Controller
      */
     public function destroy(Penghuni $penghuni)
     {
+        // Menghapus data
         $penghuni->delete();
         
-        return response()->json([
-            'success' => true,
-            'message' => 'Penghuni berhasil dihapus',
-        ]);
+        // Mengembalikan pesan sukses
+        return response()->json(['message' => 'Data penghuni berhasil dihapus']);
     }
 }

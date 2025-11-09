@@ -54,7 +54,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-navy-900 text-white">
       {/* Fixed Top Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-navy-900/150 border-b border-white/10" data-aos="fade-down">
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-navy-900/100 border-b border-white/10" data-aos="fade-down">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <img src="/img/logo.png" alt="Logo" className="h-14 w-auto rounded-md" data-aos="zoom-in" data-aos-delay="100" />
@@ -164,27 +164,45 @@ export const LoginPage: React.FC = () => {
       <section id="about" className="bg-white text-navy-900 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12" data-aos="fade-up" data-aos-duration="800">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4" data-aos="zoom-in" data-aos-delay="100">
+            <h2 className="text-3xl font-bold text-navy-900 mb-4" data-aos="zoom-in" data-aos-delay="100">
               Tentang Kami
             </h2>
             <p className="text-gray-600" data-aos="fade-up" data-aos-delay="200">Platform manajemen kost terpercaya</p>
           </div>
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div data-aos="fade-right" data-aos-delay="100">
-              <div className="space-y-4">
-                <p className="text-gray-700" data-aos="fade-up" data-aos-delay="200">
-                  E-Kost Manager adalah platform manajemen kost yang memudahkan pemilik dan penyewa dalam satu sistem terintegrasi.
+              <div className="space-y-6">
+                <p className="text-gray-700 text-base leading-relaxed" data-aos="fade-up" data-aos-delay="200">
+                  Kami adalah tim yang terdiri dari mahasiswa aktif di Telkom University Purwokerto yang bersemangat dalam teknologi dan manajemen properti, didirikan di Purwokerto pada tahun 2025. Kami menciptakan platform E Kost Manager sebagai jawaban atas kebutuhan mendesak akan sistem pengelolaan kos yang terintegrasi dan user-friendly.
                 </p>
-                <p className="text-gray-700" data-aos="fade-up" data-aos-delay="300">
-                  Kami berkomitmen untuk memberikan solusi terbaik dalam mengelola properti kost dengan teknologi modern dan user-friendly.
-                </p>
-                <p className="text-gray-700" data-aos="fade-up" data-aos-delay="400">
-                  Fokus kami adalah kemudahan penggunaan, transparansi pembayaran, dan efisiensi operasional properti untuk semua pengguna.
-                </p>
+                
+                <div data-aos="fade-up" data-aos-delay="300">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">Misi Kami:</h3>
+                  <ul className="space-y-4 text-gray-700">
+                    <li className="flex items-start">
+                      <span className="font-semibold text-navy-900 mr-2">•</span>
+                      <div>
+                        <span className="font-semibold text-navy-900">Memberdayakan Pemilik Kos:</span> Menyediakan platform yang membuat pengelolaan properti menjadi efisien, menghemat waktu, dan meningkatkan profitabilitas.
+                      </div>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="font-semibold text-navy-900 mr-2">•</span>
+                      <div>
+                        <span className="font-semibold text-navy-900">Meningkatkan Pengalaman Penyewa:</span> Menciptakan proses sewa-menyewa yang transparan, mudah, dan nyaman secara digital.
+                      </div>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="font-semibold text-navy-900 mr-2">•</span>
+                      <div>
+                        <span className="font-semibold text-navy-900">Menjadi Jantung Digital Kos di Purwokerto:</span> Berkontribusi pada ekosistem properti lokal dengan solusi teknologi terdepan.
+                      </div>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 aspect-video overflow-hidden" data-aos="fade-left" data-aos-delay="200">
-              <img src="/img/kost-image.png" alt="Kost Image" className="w-full h-full object-cover" data-aos="zoom-in" data-aos-delay="400" />
+              <img src="/img/about-us.jpg" alt="Kost Image" className="w-full h-full object-cover" data-aos="zoom-in" data-aos-delay="400" />
             </div>
           </div>
         </div>
@@ -306,7 +324,7 @@ export const LoginPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="bg-navy-800 border-t border-white/10 text-white py-8" data-aos="fade-up">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 text-center">
           <p className="text-white/60" data-aos="fade-up" data-aos-delay="100">© 2025 E-Kost Manager. Semua hak cipta dilindungi.</p>
         </div>
       </footer>

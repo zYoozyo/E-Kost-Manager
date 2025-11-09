@@ -4,31 +4,69 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Cross-Origin Resource Sharing (CORS) Configuration
+    | Jalur (paths) yang diizinkan untuk CORS
     |--------------------------------------------------------------------------
     |
-    | Here you may configure your settings for cross-origin resource sharing
-    | or "CORS". This determines what cross-origin operations may execute
-    | in web browsers. You are free to adjust these settings as needed.
-    |
-    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+    | Gunakan 'api/*' agar semua endpoint API (seperti /api/testimoni)
+    | dapat diakses dari frontend (Vite: localhost:5173)
     |
     */
+    'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'paths' => ['api/*'],
-
+    /*
+    |--------------------------------------------------------------------------
+    | Metode HTTP yang diizinkan
+    |--------------------------------------------------------------------------
+    */
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'http://localhost:5173'],
+    /*
+    |--------------------------------------------------------------------------
+    | Origin (domain) yang diizinkan
+    |--------------------------------------------------------------------------
+    |
+    | Pastikan domain frontend kamu (localhost & 127.0.0.1 port 5173)
+    | tercantum di sini agar axios/fetch bisa konek ke backend tanpa CORS error.
+    |
+    */
+    'allowed_origins' => [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+    ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Pola origin yang diizinkan (biarkan kosong)
+    |--------------------------------------------------------------------------
+    */
     'allowed_origins_patterns' => [],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Header yang diizinkan
+    |--------------------------------------------------------------------------
+    */
     'allowed_headers' => ['*'],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Header yang ditampilkan ke frontend
+    |--------------------------------------------------------------------------
+    */
     'exposed_headers' => [],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Waktu cache preflight (OPTIONS)
+    |--------------------------------------------------------------------------
+    */
     'max_age' => 0,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Izinkan pengiriman kredensial (token/cookie)
+    |--------------------------------------------------------------------------
+    */
     'supports_credentials' => true,
 
 ];

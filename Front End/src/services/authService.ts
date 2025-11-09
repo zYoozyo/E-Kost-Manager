@@ -31,6 +31,11 @@ export const authService = {
     return response.data.data as User;
   },
 
+  async updateProfile(data: Partial<User> & { password?: string }) {
+    const response = await api.put('/auth/profile', data);
+    return response.data.data as User;
+  },
+
   async logout() {
     await api.post('/auth/logout');
   },

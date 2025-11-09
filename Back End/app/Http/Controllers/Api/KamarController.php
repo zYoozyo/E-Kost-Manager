@@ -13,12 +13,7 @@ class KamarController extends Controller
      */
     public function index()
     {
-        $kamars = Kamar::all();
-        
-        return response()->json([
-            'success' => true,
-            'data' => $kamars,
-        ]);
+        return Kamar::all();
     }
 
     /**
@@ -27,7 +22,7 @@ class KamarController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'nomor_kamar' => 'required|string|unique:kamar',
+            'nomor_kamar' => 'required|string|unique:kamars',
             'tipe_kamar' => 'required|string',
             'harga_sewa' => 'required|integer',
             'status' => 'required|in:tersedia,terisi',
@@ -35,11 +30,7 @@ class KamarController extends Controller
 
         $kamar = Kamar::create($validatedData);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kamar berhasil ditambahkan',
-            'data' => $kamar,
-        ], 201);
+        return response()->json($kamar, 201);
     }
 
     /**
@@ -47,10 +38,7 @@ class KamarController extends Controller
      */
     public function show(Kamar $kamar)
     {
-        return response()->json([
-            'success' => true,
-            'data' => $kamar,
-        ]);
+        return $kamar;
     }
 
     /**
@@ -59,7 +47,7 @@ class KamarController extends Controller
     public function update(Request $request, Kamar $kamar)
     {
         $validatedData = $request->validate([
-            'nomor_kamar' => 'string|unique:kamar,nomor_kamar,' . $kamar->id,
+            'nomor_kamar' => 'string|unique:kamars,nomor_kamar,' . $kamar->id,
             'tipe_kamar' => 'string',
             'harga_sewa' => 'integer',
             'status' => 'in:tersedia,terisi',
@@ -67,11 +55,7 @@ class KamarController extends Controller
 
         $kamar->update($validatedData);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kamar berhasil diperbarui',
-            'data' => $kamar,
-        ]);
+        return response()->json($kamar);
     }
 
     /**
@@ -81,23 +65,6 @@ class KamarController extends Controller
     {
         $kamar->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kamar berhasil dihapus',
-        ]);
-    }
-
-    /**
-     * Menampilkan kamar user yang sedang login.
-     */
-    public function myKost(Request $request)
-    {
-        // TODO: Implementasi jika kamar punya relasi dengan penghuni
-        $kamars = Kamar::where('status', 'terisi')->get();
-        
-        return response()->json([
-            'success' => true,
-            'data' => $kamars,
-        ]);
+        return response()->json(['message' => 'Data kamar berhasil dihapus']);
     }
 }

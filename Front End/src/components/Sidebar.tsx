@@ -14,32 +14,34 @@ const Sidebar: React.FC = () => {
   // Menu per role
   // map admin items to existing admin dashboard tabs where possible
   const adminItems: Item[] = [
-    { id: 'profile', label: 'Profil', icon: User, to: '/admin?tab=overview' },
-    { id: 'add-property', label: 'Tambah Properti', icon: Building2, to: '/admin?tab=kosts' },
-    { id: 'add-room', label: 'Tambah Kamar', icon: Plus, to: '/admin?tab=kosts' },
-    { id: 'tenants', label: 'Penyewa', icon: Users, to: '/admin?tab=tenants' },
-    { id: 'complaints', label: 'Aduan Penyewa', icon: FileText, to: '/admin?tab=complaints' },
-    { id: 'payments', label: 'Pembayaran', icon: CreditCard, to: '/admin?tab=overview' },
-    { id: 'finance', label: 'Keuangan', icon: CreditCard, to: '/admin?tab=overview' },
+    { id: 'profile', label: 'Profil', icon: User, to: '/admin/profile' },
+    { id: 'facilities', label: 'Fasilitas', icon: Building2, to: '/admin/facilities' },
+    { id: 'tenants', label: 'Penyewa', icon: Users, to: '/admin/tenants' },
+    { id: 'complaints', label: 'Aduan Penyewa', icon: FileText, to: '/admin/complaints' },
+    { id: 'payments', label: 'Pembayaran', icon: CreditCard, to: '/admin/payments' },
+    { id: 'finance', label: 'Keuangan', icon: CreditCard, to: '/admin/finance' },
   ];
 
   const tenantItems: Item[] = [
-    { id: 'overview', label: 'Beranda', icon: Home, to: '/tenant?tab=overview' },
-    { id: 'payments', label: 'Pembayaran', icon: CreditCard, to: '/tenant?tab=payments' },
-    { id: 'complaints', label: 'Aduan', icon: FileText, to: '/tenant?tab=complaints' },
-    { id: 'profile', label: 'Profil', icon: User, to: '/tenant?tab=profile' },
+    { id: 'overview', label: 'Beranda', icon: Home, to: '/tenant/overview' },
+    { id: 'payments', label: 'Pembayaran', icon: CreditCard, to: '/tenant/payments' },
+    { id: 'complaints', label: 'Aduan', icon: FileText, to: '/tenant/complaints' },
+    { id: 'profile', label: 'Profil', icon: User, to: '/tenant/profile' },
   ];
 
   const items = user?.role === 'admin' ? adminItems : tenantItems;
 
   const getActiveId = () => {
-    const params = new URLSearchParams(location.search);
-    const tab = params.get('tab');
+    // Check current pathname to determine active item
+    const currentPath = location.pathname;
     
-    // If tab is specified in URL, use it
-    if (tab) {
-      const found = items.find((it) => it.id === tab);
-      if (found) return found.id;
+    // Find item that matches current path
+    const found = items.find((it) => it.to && currentPath.startsWith(it.to));
+    if (found) return found.id;
+    
+    // If on /admin (dashboard), return first item
+    if (currentPath === '/admin') {
+      return items[0].id;
     }
     
     // Otherwise, use the first item by default
@@ -53,10 +55,10 @@ const Sidebar: React.FC = () => {
     navigate('/');
   };
 
-  // Handle home icon click - go to overview/beranda
+  // Handle home icon click - go to dashboard
   const handleHomeClick = () => {
     const role = user?.role === 'admin' ? 'admin' : 'tenant';
-    navigate(`/${role}?tab=overview`);
+    navigate(`/${role}`);
   };
 
   // Toggle sidebar collapse
