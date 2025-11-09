@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\DashboardController;
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('signup', [AuthController::class, 'signup']);
+    Route::post('request-otp', [AuthController::class, 'requestOTP']);
+    Route::post('verify-otp', [AuthController::class, 'verifyOTP']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('profile', [AuthController::class, 'profile']);
         Route::post('logout', [AuthController::class, 'logout']);

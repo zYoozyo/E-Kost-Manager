@@ -86,4 +86,16 @@ export interface SignupFormData {
   phone: string;
   accessCode: string;
   role?: 'admin' | 'tenant' | 'owner';
+  // Owner-specific fields
+  namaKost?: string;
+  namaPemilik?: string;
+  whatsapp?: string;
+  alamat?: string;
+  kodePos?: string;
+  provinsi?: string;
+  kota?: string;
+  kecamatan?: string;
+  kelurahan?: string;
+  pilihanPembayaran?: string;
+  otp?: string;
 }

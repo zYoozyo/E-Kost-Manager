@@ -54,21 +54,21 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-navy-900 text-white">
       {/* Fixed Top Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-navy-900/90 border-b border-white/10" data-aos="fade-down">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <img src="/img/logo.png" alt="Logo" className="h-8 w-15 rounded-md" data-aos="zoom-in" data-aos-delay="100" />
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-navy-900/150 border-b border-white/10" data-aos="fade-down">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <img src="/img/logo.png" alt="Logo" className="h-14 w-auto rounded-md" data-aos="zoom-in" data-aos-delay="100" />
           </div>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6 text-sm text-white/80">
-            <a className="hover:text-white transition-colors" href="#features">Beranda</a>
-            <a className="hover:text-white transition-colors" href="#about">Tentang Kami</a>
-            <a className="hover:text-white transition-colors" href="#contact">Hubungi Kami</a>
-            <button onClick={() => navigate('/auth/login')} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-1.5 hover:bg-white/10 transition-colors">
-              <LogIn className="w-4 h-4" /> Log In
+          <div className="hidden md:flex items-center space-x-8 text-base text-white/80">
+            <a className="hover:text-white transition-colors font-medium" href="#features">Beranda</a>
+            <a className="hover:text-white transition-colors font-medium" href="#about">Tentang Kami</a>
+            <a className="hover:text-white transition-colors font-medium" href="#contact">Hubungi Kami</a>
+            <button onClick={() => navigate('/auth/login')} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-5 py-2.5 hover:bg-white/10 transition-colors text-base">
+              <LogIn className="w-5 h-5" /> Log In
             </button>
-            <button onClick={() => navigate('/auth/signup')} className="rounded-md bg-accent-500 text-navy-900 px-3 py-1.5 font-semibold hover:bg-accent-400 transition-colors">
+            <button onClick={() => navigate('/auth/signup')} className="rounded-md bg-accent-500 text-navy-900 px-5 py-2.5 font-semibold hover:bg-accent-400 transition-colors text-base">
               Sign Up
             </button>
           </div>
@@ -76,24 +76,24 @@ export const LoginPage: React.FC = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-md hover:bg-white/10 transition-colors"
+            className="md:hidden p-3 rounded-md hover:bg-white/10 transition-colors"
           >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
           </button>
         </div>
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden bg-navy-900/95 border-t border-white/10">
-            <div className="px-4 py-4 space-y-4">
-              <a className="block text-white/80 hover:text-white transition-colors" href="#features">Beranda</a>
-              <a className="block text-white/80 hover:text-white transition-colors" href="#about">Tentang Kami</a>
-              <a className="block text-white/80 hover:text-white transition-colors" href="#contact">Hubungi Kami</a>
-              <div className="flex flex-col gap-2 pt-4 border-t border-white/10">
-                <button onClick={() => navigate('/auth/login')} className="inline-flex items-center justify-center gap-2 rounded-md border border-white/20 px-3 py-2 hover:bg-white/10 transition-colors">
-                  <LogIn className="w-4 h-4" /> Log In
+            <div className="px-4 py-5 space-y-5">
+              <a className="block text-base text-white/80 hover:text-white transition-colors font-medium" href="#features">Beranda</a>
+              <a className="block text-base text-white/80 hover:text-white transition-colors font-medium" href="#about">Tentang Kami</a>
+              <a className="block text-base text-white/80 hover:text-white transition-colors font-medium" href="#contact">Hubungi Kami</a>
+              <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
+                <button onClick={() => navigate('/auth/login')} className="inline-flex items-center justify-center gap-2 rounded-md border border-white/20 px-4 py-3 hover:bg-white/10 transition-colors text-base">
+                  <LogIn className="w-5 h-5" /> Log In
                 </button>
-                <button onClick={() => navigate('/auth/signup')} className="rounded-md bg-accent-500 text-navy-900 px-3 py-2 font-semibold hover:bg-accent-400 transition-colors">
+                <button onClick={() => navigate('/auth/signup')} className="rounded-md bg-accent-500 text-navy-900 px-4 py-3 font-semibold hover:bg-accent-400 transition-colors text-base">
                   Sign Up
                 </button>
               </div>
@@ -103,7 +103,7 @@ export const LoginPage: React.FC = () => {
       </nav>
 
       {/* Hero */}
-      <header className="relative overflow-hidden pt-16">
+      <header className="relative overflow-hidden pt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div data-aos="fade-right" data-aos-duration="1000">

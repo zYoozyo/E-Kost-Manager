@@ -23,12 +23,12 @@ export const AuthSignupPage: React.FC = () => {
     <div className="min-h-screen bg-navy-900 text-white">
       {/* Header */}
       <header className="bg-navy-900/80 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center">
           <button 
             onClick={() => navigate('/')} 
-            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+            className="flex items-center gap-3 text-base text-white/80 hover:text-white transition-colors font-medium"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5" />
             Kembali ke Beranda
           </button>
         </div>
