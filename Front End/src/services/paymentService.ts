@@ -1,3 +1,5 @@
+// File: src/services/paymentService.ts
+
 import { api } from './api';
 
 export interface CreateQRISPaymentRequest {
@@ -22,29 +24,43 @@ export interface CheckPaymentStatusResponse {
   payment_method?: string;
 }
 
+// Asumsi Anda memiliki tipe untuk riwayat pembayaran,
+// jika tidak, 'any[]' sudah cukup untuk memperbaiki error
+export interface PaymentHistoryItem {
+  id: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  // ... (properti lain)
+}
+
+
 export const paymentService = {
   /**
    * Create QRIS payment - Generate QRIS code dari backend
    */
   async createQRISPayment(data: CreateQRISPaymentRequest): Promise<QRISPaymentResponse> {
-    const response = await api.post('/payments/qris/create', data);
-    return response.data.data as QRISPaymentResponse;
+    // TAMBAHKAN TIPE BALASAN DI SINI
+    const response = await api.post<{ data: QRISPaymentResponse }>('/payments/qris/create', data);
+    return response.data.data;
   },
 
   /**
    * Check payment status - Cek status pembayaran
    */
   async checkPaymentStatus(invoiceId: string): Promise<CheckPaymentStatusResponse> {
-    const response = await api.get(`/payments/qris/status/${invoiceId}`);
-    return response.data.data as CheckPaymentStatusResponse;
+    // TAMBAHKAN TIPE BALASAN DI SINI
+    const response = await api.get<{ data: CheckPaymentStatusResponse }>(`/payments/qris/status/${invoiceId}`);
+    return response.data.data;
   },
 
   /**
    * Get payment history - Riwayat pembayaran
    */
-  async getPaymentHistory() {
-    const response = await api.get('/payments/history');
+  // Tambahkan Tipe Promise (misal: Promise<PaymentHistoryItem[]>)
+  async getPaymentHistory(): Promise<PaymentHistoryItem[]> {
+    // TAMBAHKAN TIPE BALASAN DI SINI
+    const response = await api.get<{ data: PaymentHistoryItem[] }>('/payments/history');
     return response.data.data;
   },
 };
-

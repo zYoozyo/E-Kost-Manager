@@ -85,6 +85,7 @@ export interface AuthContextType {
   demoLogin: (role: 'admin' | 'tenant') => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  setUser: (user: User | null) => void;
 }
 
 export interface LoginFormData {
@@ -113,4 +114,9 @@ export interface SignupFormData {
   kelurahan?: string;
   pilihanPembayaran?: string;
   otp?: string;
+}
+
+export interface VerifyOtpResponse {
+  success: boolean;
+  message: string;
 }

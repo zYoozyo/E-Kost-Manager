@@ -12,19 +12,17 @@ export const TenantLayout: React.FC<TenantLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar />
-      <div className="flex-1">
-        <header className="bg-navy-900 text-white border-b border-white/10">
+      <div className="fixed inset-y-0 left-0 z-30">
+        <Sidebar />
+      </div>
+      <div className="flex-1 ml-56">
+        <header className="bg-white text-black border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center">
-                <Home className="w-8 h-8 text-accent-400 mr-3" />
-                <h1 className="text-2xl font-bold">E-Kost Manager</h1>
-              </div>
+            <div className="flex justify-end items-center py-4">
               <div className="flex items-center space-x-4">
                 <div className="text-right">
                   <p className="text-sm font-medium">{user?.name}</p>
-                  <p className="text-xs text-white/70">Penyewa</p>
+                  <p className="text-xs text-gray-600">Penyewa</p>
                 </div>
                 <button
                   onClick={logout}

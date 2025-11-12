@@ -66,13 +66,27 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user, onUpdate }
     setIsEditing(false);
   };
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // TODO: Implement photo upload
-    toast.success('Fitur upload foto akan segera tersedia');
-    setIsEditingPhoto(false);
+    const formData = new FormData();
+
+    formData.append('avatar', file);
+
+    try {
+      const updatedUser = await authService.updateProfile(formData);
+
+      setUser(updatedUser); 
+      if (onUpdate) {
+        onUpdate(updatedUser);
+      }
+      toast.success('Foto profil berhasil diperbarui');
+      setIsEditingPhoto(false);
+
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal mengupload foto');
+    }
   };
 
   return (
