@@ -52,7 +52,7 @@ export const LoginPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-navy-900 text-white">
+    <div className="min-h-screen bg-navy-900 text-white overflow-x-hidden">
       {/* Fixed Top Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-navy-900/100 border-b border-white/10" data-aos="fade-down">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">

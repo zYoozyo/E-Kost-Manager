@@ -3,27 +3,33 @@ import { User, LoginFormData, SignupFormData, LoginResponse, VerifyOtpResponse }
 
 export const authService = {
   async login(email: string, password: string, role: 'admin' | 'tenant'): Promise<LoginResponse> {
-    const response = await api.post<{ data: LoginResponse }>('/auth/login', {
-    email,
-    password,
-    role,
-  });
-  return response.data.data as LoginResponse;
+    const response = await api.post('/auth/login', {
+      email,
+      password,
+      role,
+    });
+    const data = response.data as { user: User; access_token: string; token_type: string };
+    return { token: data.access_token, user: data.user } as LoginResponse;
 },
 
   async signup(data: SignupFormData) {
-    const response = await api.post('/auth/signup', data);
+    const payload: any = { ...data };
+    if (data.password && !('password_confirmation' in payload)) {
+      payload.password_confirmation = data.confirmPassword ?? data.password;
+    }
+    const response = await api.post('/auth/register', payload);
     return response.data;
   },
 
   async requestOTP(email: string) {
-    const response = await api.post('/auth/request-otp', { email });
+    const response = await api.post('/otp/request', { email });
     return response.data;
   },
 
   async verifyOTP(email: string, otp: string): Promise<VerifyOtpResponse> {
-    const response = await api.post<VerifyOtpResponse>('/auth/verify-otp', { email, otp });
-    return response.data;
+    const response = await api.post('/otp/verify', { email, otp });
+    const data = response.data as { message: string; success?: boolean };
+    return { success: data.success ?? true, message: data.message } as VerifyOtpResponse;
   },
 
   async getProfile(): Promise<User> {
@@ -32,7 +38,7 @@ export const authService = {
   },
 
 async updateProfile(data: FormData): Promise<User> {
-  const response = await api.post<{ data: User }>('/auth/profile', data, {
+  const response = await api.put<{ data: User }>('/auth/profile', data, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

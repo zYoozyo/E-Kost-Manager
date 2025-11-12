@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\KostController;
 use App\Http\Controllers\Api\TestimoniController;
 use App\Http\Controllers\Api\OtpController;
+use App\Http\Controllers\Api\PembayaranController;
 
 // AUTHENTICATION
 Route::prefix('auth')->group(function () {
@@ -28,6 +29,13 @@ Route::post('/testimoni', [TestimoniController::class, 'store']);
 Route::prefix('otp')->group(function () {
     Route::post('/request', [OtpController::class, 'requestOtp']);
     Route::post('/verify', [OtpController::class, 'verifyOtp']);
+});
+
+// PAYMENTS (stub QRIS endpoints expected by FE)
+Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
+    Route::post('/qris/create', [PembayaranController::class, 'createQris']);
+    Route::get('/qris/status/{invoiceId}', [PembayaranController::class, 'checkQrisStatus']);
+    Route::get('/history', [PembayaranController::class, 'history']);
 });
 
 Route::get('/test-api', function () {
