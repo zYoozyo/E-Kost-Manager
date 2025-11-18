@@ -271,6 +271,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
   };
 
   // Handle final submission with OTP verification
+  // Handle final submission with OTP verification
   const onFinalSubmit = async (data: SignupFormData) => {
     try {
       setIsLoading(true);
@@ -282,35 +283,60 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
         return;
       }
 
-      try {
-        const verifyResponse = await authService.verifyOTP(email, data.otp!);
-        
-        if (!verifyResponse.success) {
-          toast.error('Kode OTP tidak valid');
-          setIsLoading(false);
-          return;
-        }
+      // Get all form data
+      const allFormData = watch();
 
-        setOtpVerified(true);
-      } catch (verifyError: any) {
-        toast.error(verifyError.response?.data?.message || 'Kode OTP tidak valid');
+      console.log('🔍 OTP dari form:', data.otp);
+      console.log('🔍 All form data:', allFormData);
+
+      // Pastikan OTP ada
+      if (!data.otp || data.otp.trim() === '') {
+        toast.error('Kode OTP wajib diisi');
         setIsLoading(false);
         return;
       }
 
-      // Now submit the full signup data
+      // Prepare signup data - pastikan semua field ada
       const signupData: SignupFormData = {
-        ...data,
-        role: 'owner',
-        name: data.namaPemilik || '',
-        phone: data.whatsapp || '',
+        email: allFormData.email,
+        password: allFormData.password,
+        confirmPassword: allFormData.confirmPassword,
+        // Map ke field yang expected
+        namaPemilik: allFormData.namaPemilik,
+        namaKost: allFormData.namaKost,
+        whatsapp: allFormData.whatsapp,
+        alamat: allFormData.alamat,
+        kodePos: allFormData.kodePos,
+        provinsi: allFormData.provinsi,
+        kota: allFormData.kota,
+        kecamatan: allFormData.kecamatan,
+        kelurahan: allFormData.kelurahan,
+        pilihanPembayaran: allFormData.pilihanPembayaran,
+        otp: data.otp.trim(), // Pastikan OTP di-trim
       };
 
-      await authService.signup(signupData);
+      console.log('📝 Submitting signup data:', signupData);
+
+      const response = await authService.signup(signupData);
+      console.log('✅ Signup response:', response);
+      
       toast.success('Pendaftaran berhasil! Silakan login.');
       onSwitchToLogin();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Pendaftaran gagal');
+      console.error('❌ Signup error:', error.response?.data);
+      
+      // Better error handling
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        
+        // Display all errors
+        Object.entries(errors).forEach(([field, messages]) => {
+          const msgArray = messages as string[];
+          msgArray.forEach(msg => toast.error(`${field}: ${msg}`));
+        });
+      } else {
+        toast.error(error.response?.data?.message || 'Pendaftaran gagal. Silakan coba lagi.');
+      }
     } finally {
       setIsLoading(false);
     }

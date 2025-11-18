@@ -2,61 +2,45 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class OtpService
 {
-    // Generate numeric OTP (default 6 digit) dan simpan ke DB
-    public static function generateOtp($userId, $length = 6, $ttl_seconds = 300)
+    // Generate OTP untuk user yang sudah ada (by user_id)
+    public static function generateOtp($userId)
     {
-        $otp = '';
-        for ($i = 0; $i < $length; $i++) {
-            $otp .= strval(random_int(0, 9));
-        }
-
-        $salt = bin2hex(random_bytes(16));
-        $otp_hash = hash_hmac('sha256', $otp, $salt);
-        $expires_at = Carbon::now()->addSeconds($ttl_seconds)->toDateTimeString();
-
-        DB::table('otps')->updateOrInsert(
-            ['user_id' => $userId],
-            [
-                'otp_hash' => $otp_hash,
-                'salt' => $salt,
-                'expires_at' => $expires_at,
-                'attempts' => 0,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]
-        );
-
-        return $otp; // Kembalikan OTP untuk dikirim via email/SMS
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        Cache::put("otp_user_{$userId}", $otp, now()->addMinutes(10));
+        return $otp;
     }
 
-    // Verifikasi OTP
-    public static function verifyOtp($userId, $otpInput, $maxAttempts = 3)
+    // Verify OTP untuk user yang sudah ada
+    public static function verifyOtp($userId, $otp)
     {
-        $row = DB::table('otps')->where('user_id', $userId)->first();
-        if (!$row) return ['ok' => false, 'reason' => 'no_otp'];
-
-        if (Carbon::now()->gt(Carbon::parse($row->expires_at))) {
-            DB::table('otps')->where('user_id', $userId)->delete();
-            return ['ok' => false, 'reason' => 'expired'];
+        $cached = Cache::get("otp_user_{$userId}");
+        if ($cached && $cached === $otp) {
+            Cache::forget("otp_user_{$userId}");
+            return ['ok' => true];
         }
+        return ['ok' => false];
+    }
 
-        if ($row->attempts >= $maxAttempts) {
-            return ['ok' => false, 'reason' => 'blocked'];
-        }
+    // Generate OTP untuk email (untuk registrasi - user belum ada)
+    public static function generateOtpForEmail($email)
+    {
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        Cache::put("otp_email_{$email}", $otp, now()->addMinutes(10));
+        return $otp;
+    }
 
-        $input_hash = hash_hmac('sha256', $otpInput, $row->salt);
-        if (hash_equals($input_hash, $row->otp_hash)) {
-            DB::table('otps')->where('user_id', $userId)->delete();
-            return ['ok' => true, 'reason' => 'ok'];
-        } else {
-            DB::table('otps')->where('user_id', $userId)->increment('attempts');
-            return ['ok' => false, 'reason' => 'wrong'];
+    // Verify OTP untuk email (untuk registrasi)
+    public static function verifyOtpForEmail($email, $otp)
+    {
+        $cached = Cache::get("otp_email_{$email}");
+        if ($cached && $cached === $otp) {
+            Cache::forget("otp_email_{$email}");
+            return ['ok' => true];
         }
+        return ['ok' => false];
     }
 }

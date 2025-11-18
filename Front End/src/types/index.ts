@@ -7,7 +7,7 @@ export interface User {
   name: string;
   username?: string;
   email: string;
-  role: 'admin' | 'tenant' | 'owner';
+  role: 'admin' | 'tenant';
   phone?: string;
   whatsapp?: string;
   address?: string;
@@ -26,7 +26,7 @@ export interface Kost {
   available_rooms: number;
   facilities: string[];
   images: string[];
-  owner_id: number;
+  admin_id: number;
   created_at: string;
   updated_at: string;
 }
@@ -91,18 +91,22 @@ export interface AuthContextType {
 export interface LoginFormData {
   email: string;
   password: string;
-  role: 'admin' | 'tenant';
+  role: 'admin' | 'tenant'
 }
 
 export interface SignupFormData {
-  name: string;
+  // Required fields
   email: string;
   password: string;
-  confirmPassword: string;
-  phone: string;
-  accessCode: string;
-  role?: 'admin' | 'tenant' | 'owner';
-  // Owner-specific fields
+  
+  // Optional fields (semua pakai ?)
+  name?: string;
+  confirmPassword?: string;
+  phone?: string;
+  accessCode?: string;
+  role?: 'admin' | 'tenant';
+  
+  // admin-specific fields
   namaKost?: string;
   namaPemilik?: string;
   whatsapp?: string;

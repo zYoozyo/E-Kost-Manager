@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
+use App\Services\OtpService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
-
 {
     // ===========================
     // REGISTER
@@ -18,29 +21,97 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         try {
-            $validated = $request->validate([
+            Log::info('📥 Registration request:', $request->all());
+
+            // VALIDATE OTP FIRST - user harus sudah verify OTP
+            if ($request->has('otp')) {
+                $otpValid = OtpService::verifyOtpForEmail($request->email, $request->otp);
+                if (!$otpValid['ok']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'OTP tidak valid atau sudah kadaluarsa',
+                    ], 422);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OTP wajib diisi',
+                ], 422);
+            }
+
+            $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
-                'email' => 'required|string|email|unique:users',
-                'password' => 'required|string|min:6|confirmed', // pakai confirmed
-                'role' => 'required|string',
+                'email' => 'required|string|email|max:255|unique:users,email',
+                'password' => 'required|string|min:6',
+                'password_confirmation' => 'required|same:password',
+                'role' => 'required|string|in:admin,tenant',
+                'whatsapp' => 'nullable|string|max:20',
+                'otp' => 'required|string|size:6',
+                // admin specific fields
+                'namaKost' => 'required_if:role,admin|string|max:255',
+                'alamat' => 'required_if:role,admin|string',
+                'kodePos' => 'required_if:role,admin|string|max:10',
+                'provinsi' => 'required_if:role,admin|string|max:100',
+                'kota' => 'required_if:role,admin|string|max:100',
+                'kecamatan' => 'required_if:role,admin|string|max:100',
+                'kelurahan' => 'required_if:role,admin|string|max:100',
+                'pilihanPembayaran' => 'required_if:role,admin|string|max:50',
             ]);
 
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $validated = $validator->validated();
+
+            // Create user
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'role' => $validated['role'],
+                'phone' => $validated['whatsapp'] ?? null,
+                'whatsapp' => $validated['whatsapp'] ?? null,
             ]);
 
+            // Create admin profile if role is admin
+            if ($validated['role'] === 'admin') {
+                $user->ownerProfile()->create([
+                    'nama_kost' => $validated['namaKost'],
+                    'alamat' => $validated['alamat'],
+                    'kode_pos' => $validated['kodePos'],
+                    'provinsi' => $validated['provinsi'],
+                    'kota' => $validated['kota'],
+                    'kecamatan' => $validated['kecamatan'],
+                    'kelurahan' => $validated['kelurahan'],
+                    'pilihan_pembayaran' => $validated['pilihanPembayaran'],
+                ]);
+            }
+
+            // Load relationship
+            $user->load('ownerProfile');
+
+            Log::info('✅ User registered:', ['id' => $user->id, 'role' => $user->role]);
+
             return response()->json([
+                'success' => true,
                 'message' => 'Registrasi berhasil',
                 'user' => $user,
             ], 201);
-        } catch (ValidationException $e) {
+        } catch (\Exception $e) {
+            Log::error('💥 Registration error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors(),
-            ], 422);
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -57,11 +128,12 @@ class AuthController extends Controller
 
         // cari user berdasarkan email dan role
         $user = User::where('email', $request->email)
-                    ->where('role', $request->role)
-                    ->first();
+            ->where('role', $request->role)
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
+                'success' => false,
                 'message' => 'Email atau password salah!'
             ], 401);
         }
@@ -70,6 +142,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
+            'success' => true,
             'message' => 'Login berhasil',
             'user' => $user,
             'access_token' => $token,
@@ -90,6 +163,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
+            'success' => true,
             'message' => 'Profile berhasil diambil',
             'data' => $user,
         ]);
@@ -137,6 +211,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
+            'success' => true,
             'message' => 'Profile berhasil diperbarui',
             'data' => $user,
         ]);
@@ -150,6 +225,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
+            'success' => true,
             'message' => 'Logout berhasil',
         ]);
     }

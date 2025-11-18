@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Eye, EyeOff, User, Lock, Building2 } from 'lucide-react';
+import { Eye, EyeOff, User, Lock, Building2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { LoginFormData } from '../types';
-import toast from 'react-hot-toast';
 
 interface LoginFormProps {
   onSwitchToSignup: () => void;
@@ -13,6 +12,11 @@ interface LoginFormProps {
 export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'admin' | 'tenant'>('tenant');
+  const [loginStatus, setLoginStatus] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({ type: null, message: '' });
+  
   const { login, demoLogin, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -20,33 +24,105 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<LoginFormData>();
 
   const onSubmit = async (data: LoginFormData) => {
     try {
+      // 1. Log Attempt (Logging)
+      console.log('Login Attempt:', {
+        email: data.email,
+        role: selectedRole,
+        timestamp: new Date().toISOString(),
+      });
+
+      setLoginStatus({ type: null, message: '' });
+      
+      // 2. Call non-refresh login service (Auth Logic)
       await login(data.email, data.password, selectedRole);
-      toast.success('Login berhasil!');
-      if (selectedRole === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/tenant');
-      }
+      
+      // 3. Log Success (Logging)
+      console.log('Login Success:', {
+        email: data.email,
+        role: selectedRole,
+        timestamp: new Date().toISOString(),
+      });
+
+      // 4. Show Success Message (UX Feedback)
+      setLoginStatus({
+        type: 'success',
+        message: 'Login berhasil! Mengalihkan...',
+      });
+
+      // 5. Navigate (Non-refresh redirect)
+      setTimeout(() => {
+        if (selectedRole === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/tenant');
+        }
+      }, 1000);
+
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Login gagal');
+      // 6. Log Error (Logging)
+      const errorDetails = {
+        // ... (Error details logging)
+      };
+      console.error('❌ Login Failed:', errorDetails);
+
+      // 7. Show Error Message (UX Feedback)
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Login gagal. Silakan coba lagi.';
+      
+      setLoginStatus({
+        type: 'error',
+        message: errorMessage,
+      });
+      // TIDAK ADA RESET FORM: Data tetap ada untuk dicoba lagi
     }
   };
 
   const handleDemoLogin = async () => {
     try {
+      console.log('🎭 Demo Login Attempt:', {
+        role: selectedRole,
+        timestamp: new Date().toISOString(),
+      });
+
+      setLoginStatus({ type: null, message: '' });
+      
       await demoLogin(selectedRole);
-      toast.success(`Login demo berhasil sebagai ${selectedRole === 'admin' ? 'Pemilik' : 'Penyewa'}!`);
-      if (selectedRole === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/tenant');
-      }
+      
+      console.log('✅ Demo Login Success:', {
+        role: selectedRole,
+        timestamp: new Date().toISOString(),
+      });
+
+      setLoginStatus({
+        type: 'success',
+        message: `Login demo berhasil sebagai ${selectedRole === 'admin' ? 'Pemilik' : 'Penyewa'}!`,
+      });
+
+      setTimeout(() => {
+        if (selectedRole === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/tenant');
+        }
+      }, 1000);
+
     } catch (error: any) {
-      toast.error('Login demo gagal');
+      console.error('❌ Demo Login Failed:', {
+        role: selectedRole,
+        timestamp: new Date().toISOString(),
+        error: error.message,
+      });
+
+      setLoginStatus({
+        type: 'error',
+        message: 'Login demo gagal. Silakan coba lagi.',
+      });
     }
   };
 
@@ -61,6 +137,32 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
           <p className="text-gray-600">Masuk ke akun Anda</p>
         </div>
 
+        {/* Status Message */}
+        {loginStatus.type && (
+          <div
+            className={`mb-6 p-4 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
+              loginStatus.type === 'success'
+                ? 'bg-green-50 border border-green-200'
+                : 'bg-red-50 border border-red-200'
+            }`}
+          >
+            {loginStatus.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1">
+              <p
+                className={`text-sm font-medium ${
+                  loginStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}
+              >
+                {loginStatus.message}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Role Selection */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -70,11 +172,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
             <button
               type="button"
               onClick={() => setSelectedRole('tenant')}
+              disabled={isLoading}
               className={`p-3 rounded-lg border-2 transition-all ${
                 selectedRole === 'tenant'
                   ? 'border-primary-500 bg-primary-50 text-primary-700'
                   : 'border-gray-200 text-gray-600 hover:border-gray-300'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <User className="w-5 h-5 mx-auto mb-1" />
               <span className="text-sm font-medium">Penyewa</span>
@@ -82,11 +185,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
             <button
               type="button"
               onClick={() => setSelectedRole('admin')}
+              disabled={isLoading}
               className={`p-3 rounded-lg border-2 transition-all ${
                 selectedRole === 'admin'
                   ? 'border-primary-500 bg-primary-50 text-primary-700'
                   : 'border-gray-200 text-gray-600 hover:border-gray-300'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Building2 className="w-5 h-5 mx-auto mb-1" />
               <span className="text-sm font-medium">Pemilik</span>
@@ -105,11 +209,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
                 {...register('email', { required: 'Email wajib diisi' })}
                 className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-black"
                 placeholder="Masukkan email Anda"
+                disabled={isLoading}
               />
               <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
             {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {errors.email.message}
+              </p>
             )}
           </div>
 
@@ -123,27 +231,39 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
                 {...register('password', { required: 'Password wajib diisi' })}
                 className="w-full px-4 py-3 pl-12 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-black"
                 placeholder="Masukkan password Anda"
+                disabled={isLoading}
               />
               <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                disabled={isLoading}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {errors.password.message}
+              </p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isLoading ? 'Memproses...' : 'Masuk'}
+            {isLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Memproses...
+              </>
+            ) : (
+              'Masuk'
+            )}
           </button>
         </form>
 
@@ -160,9 +280,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
           type="button"
           onClick={handleDemoLogin}
           disabled={isLoading}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-navy-900 py-3 px-4 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-yellow-400 hover:bg-yellow-500 text-navy-900 py-3 px-4 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {isLoading ? 'Memproses...' : 'Login Demo'}
+          {isLoading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-navy-900 border-t-transparent rounded-full animate-spin" />
+              Memproses...
+            </>
+          ) : (
+            'Login Demo'
+          )}
         </button>
 
         <div className="mt-6 text-center">
@@ -171,6 +298,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
             <button
               onClick={onSwitchToSignup}
               className="text-primary-600 hover:text-primary-700 font-medium"
+              disabled={isLoading}
             >
               Daftar sebagai pemilik
             </button>
