@@ -169,9 +169,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // ===========================
     // UPDATE PROFILE
-    // ===========================
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -217,9 +215,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // ===========================
     // LOGOUT
-    // ===========================
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

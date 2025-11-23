@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\KostController;
 use App\Http\Controllers\Api\TestimoniController;
 use App\Http\Controllers\Api\OtpController;
@@ -36,6 +37,16 @@ Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
     Route::post('/qris/create', [PembayaranController::class, 'createQris']);
     Route::get('/qris/status/{invoiceId}', [PembayaranController::class, 'checkQrisStatus']);
     Route::get('/history', [PembayaranController::class, 'history']);
+});
+
+// Invitation routes
+Route::post('/invitations/validate', [InvitationController::class, 'validateInvitation']);
+Route::post('/invitations/accept', [InvitationController::class, 'accept']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/invitations', [InvitationController::class, 'create']);
+    Route::get('/invitations', [InvitationController::class, 'list']);
+    Route::delete('/invitations/{id}', [InvitationController::class, 'delete']);
 });
 
 Route::get('/test-api', function () {

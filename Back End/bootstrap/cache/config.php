@@ -81,9 +81,9 @@
   array (
     'paths' => 
     array (
-      0 => 'C:\\laragon\\www\\Back End\\resources\\views',
+      0 => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\resources\\views',
     ),
-    'compiled' => 'C:\\laragon\\www\\Back End\\storage\\framework\\views',
+    'compiled' => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\storage\\framework\\views',
   ),
   'app' => 
   array (
@@ -243,8 +243,8 @@
       'file' => 
       array (
         'driver' => 'file',
-        'path' => 'C:\\laragon\\www\\Back End\\storage\\framework/cache/data',
-        'lock_path' => 'C:\\laragon\\www\\Back End\\storage\\framework/cache/data',
+        'path' => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\storage\\framework/cache/data',
+        'lock_path' => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\storage\\framework/cache/data',
       ),
       'memcached' => 
       array (
@@ -303,8 +303,8 @@
     ),
     'allowed_origins' => 
     array (
-      0 => 'http://localhost:5173',
-      1 => 'http://127.0.0.1:5173',
+      0 => 'http://192.168.153.1:3000',
+      1 => 'http://localhost:3000',
     ),
     'allowed_origins_patterns' => 
     array (
@@ -455,7 +455,7 @@
       'local' => 
       array (
         'driver' => 'local',
-        'root' => 'C:\\laragon\\www\\Back End\\storage\\app/private',
+        'root' => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\storage\\app/private',
         'serve' => true,
         'throw' => false,
         'report' => false,
@@ -463,7 +463,7 @@
       'public' => 
       array (
         'driver' => 'local',
-        'root' => 'C:\\laragon\\www\\Back End\\storage\\app/public',
+        'root' => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\storage\\app/public',
         'url' => 'http://127.0.0.1:8000/storage',
         'visibility' => 'public',
         'throw' => false,
@@ -485,7 +485,7 @@
     ),
     'links' => 
     array (
-      'C:\\laragon\\www\\Back End\\public\\storage' => 'C:\\laragon\\www\\Back End\\storage\\app/public',
+      'C:\\laragon\\www\\E-Kost-Manager\\Back End\\public\\storage' => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\storage\\app/public',
     ),
   ),
   'logging' => 
@@ -510,14 +510,14 @@
       'single' => 
       array (
         'driver' => 'single',
-        'path' => 'C:\\laragon\\www\\Back End\\storage\\logs/laravel.log',
+        'path' => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\storage\\logs/laravel.log',
         'level' => 'debug',
         'replace_placeholders' => true,
       ),
       'daily' => 
       array (
         'driver' => 'daily',
-        'path' => 'C:\\laragon\\www\\Back End\\storage\\logs/laravel.log',
+        'path' => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\storage\\logs/laravel.log',
         'level' => 'debug',
         'days' => 14,
         'replace_placeholders' => true,
@@ -582,7 +582,7 @@
       ),
       'emergency' => 
       array (
-        'path' => 'C:\\laragon\\www\\Back End\\storage\\logs/laravel.log',
+        'path' => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\storage\\logs/laravel.log',
       ),
     ),
   ),
@@ -660,7 +660,7 @@
       'theme' => 'default',
       'paths' => 
       array (
-        0 => 'C:\\laragon\\www\\Back End\\resources\\views/vendor/mail',
+        0 => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\resources\\views/vendor/mail',
       ),
     ),
   ),
@@ -733,7 +733,8 @@
       2 => '127.0.0.1',
       3 => '127.0.0.1:8000',
       4 => '::1',
-      5 => '127.0.0.1:8000',
+      5 => ' 192.168.153.1:3000',
+      6 => '127.0.0.1:8000',
     ),
     'guard' => 
     array (
@@ -779,7 +780,7 @@
     'lifetime' => 120,
     'expire_on_close' => false,
     'encrypt' => false,
-    'files' => 'C:\\laragon\\www\\Back End\\storage\\framework/sessions',
+    'files' => 'C:\\laragon\\www\\E-Kost-Manager\\Back End\\storage\\framework/sessions',
     'connection' => NULL,
     'table' => 'sessions',
     'store' => NULL,
@@ -791,7 +792,7 @@
     'cookie' => 'e-kost-session',
     'path' => '/',
     'domain' => NULL,
-    'secure' => NULL,
+    'secure' => false,
     'http_only' => true,
     'same_site' => 'lax',
     'partitioned' => false,
