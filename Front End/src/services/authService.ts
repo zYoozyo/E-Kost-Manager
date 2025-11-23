@@ -1,15 +1,26 @@
 import { api } from './api';
+import axios from 'axios';
 import { User, LoginFormData, SignupFormData, LoginResponse, VerifyOtpResponse } from '../types';
 
+export const getCsrfCookie = async () => {
+  return await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
+    withCredentials: true,
+  });
+};
+
 export const authService = {
+
   async login(email: string, password: string, role: 'admin' | 'tenant'): Promise<LoginResponse> {
-    // Pastikan role dikirim ke endpoint
-    const response = await api.post('/auth/login', {
-      email,
-      password,
-      role,
-    });
+  // Ambil CSRF cookie
+  await getCsrfCookie();
+
+    // 2️⃣ Login
+    const response = await api.post('/auth/login', { email, password, role });
     const data = response.data as { user: User; access_token: string; token_type: string };
+
+    // 3️⃣ Simpan token di localStorage
+    localStorage.setItem('token', data.access_token);
+
     return { token: data.access_token, user: data.user } as LoginResponse;
   },
 

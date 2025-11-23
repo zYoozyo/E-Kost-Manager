@@ -7,7 +7,7 @@ export interface Invite {
   ownerId: number | string;
   email: string;
   name?: string;
-  token: string; // plain token for demo only
+  token: string;
   expiresAt: string;
   used: boolean;
 }
