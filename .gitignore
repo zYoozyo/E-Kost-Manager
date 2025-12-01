@@ -1,7 +1,4 @@
-﻿Set-Location -Path "C:\Users\USER\OneDrive\Desktop\E-Kost Manager"
-
-@"
-# Node
+﻿# Node
 node_modules/
 dist/
 .build/
@@ -9,17 +6,33 @@ dist/
 .env
 .env.local
 .env.*.local
+.env.production
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-lock.yaml
 package-lock.json
+
+# Laravel
+vendor/
+storage/*.key
+.env.backup
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+
 # mac / editor
 .DS_Store
 .vscode/
 .idea/
 *.log
+
 # build outputs
 build/
 coverage/
-"@ | Out-File -Encoding UTF8 .gitignore
+
+# Database
+*.sqlite
+*.db
