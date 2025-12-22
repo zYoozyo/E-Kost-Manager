@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TenantLayout } from '../../components/TenantLayout';
-import { Plus, Printer, QrCode, X, Eye, CreditCard, AlertCircle } from 'lucide-react';
+import { Plus, Printer, QrCode, X, Eye, CreditCard, AlertCircle, Upload, FileImage } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { paymentService, PaymentHistoryItem } from '../../services/paymentService';
 import { ownerPaymentSettingsService, TenantPaymentSettings } from '../../services/ownerPaymentSettingsService';
@@ -11,10 +11,14 @@ export const TenantPaymentsPage: React.FC = () => {
   const { user } = useAuth();
   const [showQrisModal, setShowQrisModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [qrisString, setQrisString] = useState<string>('');
   const [isLoadingPayment, setIsLoadingPayment] = useState(false);
   const [pollingInterval, setPollingInterval] = useState<number | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadNominal, setUploadNominal] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
   const [payments, setPayments] = useState<{
     id: number;
     noFaktur: string;
@@ -108,6 +112,18 @@ export const TenantPaymentsPage: React.FC = () => {
             dueDateFormatted += ` (${dueDateStatus})`;
           }
 
+          // Map status
+          let statusText = 'Belum Lunas';
+          if (p.status === 'paid') {
+            statusText = 'Lunas';
+          } else if (p.status === 'waiting_verification') {
+            statusText = 'Menunggu Verifikasi';
+          } else if (p.status === 'rejected') {
+            statusText = 'Ditolak';
+          } else if (p.status === 'late') {
+            statusText = 'Terlambat';
+          }
+
           return {
             id: p.id,
             noFaktur: p.invoice_code,
@@ -117,10 +133,11 @@ export const TenantPaymentsPage: React.FC = () => {
             isOverdue: p.status !== 'paid' && daysUntilDue < 0,
             isDueSoon: p.status !== 'paid' && daysUntilDue >= 0 && daysUntilDue <= 3,
             daysUntilDue: daysUntilDue,
-            status: p.status === 'paid' ? 'Lunas' : 'Belum Lunas',
+            status: statusText,
             jumlah: `Rp ${p.nominal_tagihan.toLocaleString('id-ID')}`,
             amount: p.nominal_tagihan,
             metode: p.metode_pembayaran,
+            rawStatus: p.status, // Simpan status asli untuk logic
           };
         });
 
@@ -187,6 +204,35 @@ export const TenantPaymentsPage: React.FC = () => {
   const handleDetail = (payment: any) => {
     setSelectedPayment(payment);
     setShowDetailModal(true);
+  };
+
+  // Handle Upload Bukti Transfer
+  const handleUploadProof = async () => {
+    if (!uploadFile || !selectedPayment) {
+      toast.error('Pilih file bukti transfer terlebih dahulu');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const nominal = uploadNominal ? parseInt(uploadNominal.replace(/[^\d]/g, '')) : undefined;
+      
+      await paymentService.uploadPaymentProof(selectedPayment.id, uploadFile, nominal);
+      
+      toast.success('Bukti pembayaran berhasil diunggah! Menunggu verifikasi dari pemilik.');
+      setShowUploadModal(false);
+      setUploadFile(null);
+      setUploadNominal('');
+      
+      // Reload payments
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal mengunggah bukti pembayaran');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Handle Pay from Detail Modal
@@ -406,7 +452,15 @@ export const TenantPaymentsPage: React.FC = () => {
                 <div>
                   <p className="text-xs font-semibold text-gray-600 mb-1">QRIS Pemilik (opsional)</p>
                   <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 flex items-center justify-center min-h-[140px]">
-                    {tenantPaymentSettings.payment_settings.qris_payload ? (
+                    {tenantPaymentSettings.payment_settings.qris_image_url ? (
+                      // Tampilkan foto QRIS jika ada
+                      <img
+                        src={tenantPaymentSettings.payment_settings.qris_image_url}
+                        alt="QRIS"
+                        className="max-w-full h-auto max-h-48 rounded-lg"
+                      />
+                    ) : tenantPaymentSettings.payment_settings.qris_payload ? (
+                      // Tampilkan QR code dari payload jika tidak ada foto
                       <QRCodeSVG
                         value={tenantPaymentSettings.payment_settings.qris_payload}
                         size={120}
@@ -535,7 +589,7 @@ export const TenantPaymentsPage: React.FC = () => {
 
       {/* Detail Invoice Modal */}
       {showDetailModal && selectedPayment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[90]">
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -656,18 +710,30 @@ export const TenantPaymentsPage: React.FC = () => {
                   </div>
                 )}
 
-                {selectedPayment.metode === 'qris' && tenantPaymentSettings.payment_settings.qris_payload && (
+                {selectedPayment.metode === 'qris' && (tenantPaymentSettings.payment_settings.qris_payload || tenantPaymentSettings.payment_settings.qris_image_url) && (
                   <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-4">
                     <h4 className="text-sm font-semibold text-gray-900 mb-3">QRIS</h4>
                     <div className="flex justify-center mb-4">
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <QRCodeSVG
-                          value={tenantPaymentSettings.payment_settings.qris_payload}
-                          size={160}
-                          level="M"
-                          includeMargin={true}
-                        />
-                      </div>
+                      {tenantPaymentSettings.payment_settings.qris_image_url ? (
+                        // Tampilkan foto QRIS jika ada
+                        <div className="bg-white p-4 rounded-lg shadow-sm">
+                          <img
+                            src={tenantPaymentSettings.payment_settings.qris_image_url}
+                            alt="QRIS"
+                            className="max-w-full h-auto max-h-64 rounded-lg"
+                          />
+                        </div>
+                      ) : tenantPaymentSettings.payment_settings.qris_payload ? (
+                        // Tampilkan QR code dari payload jika tidak ada foto
+                        <div className="bg-white p-4 rounded-lg shadow-sm">
+                          <QRCodeSVG
+                            value={tenantPaymentSettings.payment_settings.qris_payload}
+                            size={160}
+                            level="M"
+                            includeMargin={true}
+                          />
+                        </div>
+                      ) : null}
                     </div>
                     <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
                       <p className="text-xs text-yellow-800">
@@ -690,9 +756,75 @@ export const TenantPaymentsPage: React.FC = () => {
               </div>
             )}
 
+            {/* Upload Bukti Section - Show if payment is pending/late/rejected */}
+            {(() => {
+              // Gunakan rawStatus jika ada, jika tidak gunakan status text
+              const rawStatus = selectedPayment.rawStatus || 
+                               (selectedPayment.status === 'Lunas' ? 'paid' : 
+                                selectedPayment.status === 'Menunggu Verifikasi' ? 'waiting_verification' :
+                                selectedPayment.status === 'Ditolak' ? 'rejected' :
+                                selectedPayment.status === 'Terlambat' ? 'late' : 'pending');
+              
+              const canUpload = rawStatus !== 'paid' && rawStatus !== 'waiting_verification';
+              
+              console.log('Upload section check:', { 
+                rawStatus,
+                status: selectedPayment.status,
+                canUpload,
+                selectedPayment
+              });
+              
+              return canUpload;
+            })() && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-yellow-800 mb-1">
+                      Setelah melakukan transfer, upload bukti pembayaran
+                    </p>
+                    <p className="text-xs text-yellow-700 mb-3">
+                      Pemilik kost akan memverifikasi pembayaran Anda setelah menerima bukti transfer.
+                    </p>
+                    <button
+                      onClick={() => {
+                        console.log('Upload button clicked', selectedPayment);
+                        setShowUploadModal(true);
+                        setUploadNominal(selectedPayment.jumlah.replace(/[^\d]/g, ''));
+                        console.log('showUploadModal set to true');
+                      }}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload Bukti Transfer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Status Menunggu Verifikasi */}
+            {selectedPayment.rawStatus === 'waiting_verification' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-blue-800 mb-1">
+                      Bukti pembayaran sudah diunggah
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      Menunggu verifikasi dari pemilik kost. Anda akan mendapat notifikasi setelah pembayaran diverifikasi.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex gap-3 pt-6 border-t">
-              {selectedPayment.status !== 'Lunas' && (
+              {selectedPayment.rawStatus && 
+               selectedPayment.rawStatus !== 'paid' && 
+               selectedPayment.rawStatus !== 'waiting_verification' && (
                 <button
                   onClick={() => handlePayFromDetail(selectedPayment)}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
@@ -803,6 +935,140 @@ export const TenantPaymentsPage: React.FC = () => {
                   Tutup
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Bukti Transfer Modal */}
+      {showUploadModal && selectedPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Upload className="w-6 h-6 text-blue-500" />
+                Upload Bukti Transfer
+              </h2>
+              <button
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setUploadFile(null);
+                  setUploadNominal('');
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  File Bukti Transfer
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                  <input
+                    type="file"
+                    id="proof-upload"
+                    accept="image/*,.pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                          toast.error('Ukuran file maksimal 2MB');
+                          return;
+                        }
+                        setUploadFile(file);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="proof-upload"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    {uploadFile ? (
+                      <>
+                        <FileImage className="w-12 h-12 text-green-500" />
+                        <p className="text-sm font-medium text-gray-900">{uploadFile.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {(uploadFile.size / 1024).toFixed(2)} KB
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-12 h-12 text-gray-400" />
+                        <p className="text-sm font-medium text-gray-700">
+                          Klik untuk memilih file
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Format: JPG, PNG, atau PDF (Maks. 2MB)
+                        </p>
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Nominal yang Dibayar (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={uploadNominal}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^\d]/g, '');
+                    setUploadNominal(value);
+                  }}
+                  placeholder="Contoh: 500000"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {uploadNominal && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Rp {parseInt(uploadNominal).toLocaleString('id-ID')}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Kosongkan jika nominal sesuai dengan tagihan
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  <strong>Catatan:</strong> Pastikan bukti transfer jelas dan terlihat nomor faktur atau informasi pembayaran.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6 pt-6 border-t">
+              <button
+                onClick={handleUploadProof}
+                disabled={!uploadFile || isUploading}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+              >
+                {isUploading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Mengunggah...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Upload Bukti
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setUploadFile(null);
+                  setUploadNominal('');
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-semibold transition-colors"
+              >
+                Batal
+              </button>
             </div>
           </div>
         </div>

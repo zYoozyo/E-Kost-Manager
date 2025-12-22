@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('kamars', function (Blueprint $table) {
-            $table->date('tanggal_mulai_sewa')->nullable()->after('tenant_id');
-            $table->text('catatan_sewa')->nullable()->after('tanggal_mulai_sewa');
+            $table->date('tanggal_mulai_sewa')->nullable();
+            $table->text('catatan_sewa')->nullable();
         });
     }
 

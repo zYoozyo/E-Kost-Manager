@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../../components/AdminLayout';
-import { Building2, Home, Users, DollarSign, TrendingUp, CreditCard, Menu, X } from 'lucide-react';
+import { Building2, Home, Users, DollarSign, TrendingUp, CreditCard } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { roomService, OwnerRoom } from '../../services/roomService';
 import { invitationService, OwnerTenantApi } from '../../services/invitationService';
@@ -21,7 +21,6 @@ export const AdminDashboardPage: React.FC = () => {
   const [paymentsResult, setPaymentsResult] = useState<OwnerPaymentsResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,26 +29,67 @@ export const AdminDashboardPage: React.FC = () => {
         setError(null);
 
         const [roomsData, tenantsData, paymentsData] = await Promise.all([
-          roomService.getOwnerRooms(),
-          invitationService.getOwnerTenants(),
-          paymentService.getOwnerPayments(),
+          roomService.getAdminRooms(),
+          invitationService.getAdminTenants(),
+          paymentService.getAdminPayments(),
         ]);
 
         setRooms(roomsData);
         setPaymentsResult(paymentsData);
 
-        setTenants(
-          tenantsData.map((t: OwnerTenantApi) => ({
+        // Extract tenant data from rooms if API doesn't return tenant data
+        let extractedTenants: DashboardTenant[] = [];
+        
+        if (tenantsData && tenantsData.length > 0) {
+          // Use tenant data from API
+          extractedTenants = tenantsData.map((t: OwnerTenantApi) => ({
             id: t.id,
             name: t.name,
             email: t.email,
             room: t.room || '-',
             status: t.status || 'Tidak Aktif',
-          }))
-        );
+          }));
+        } else {
+          // Extract tenant data from rooms
+          extractedTenants = roomsData
+            .filter(room => room.tenant_name && room.tenant_email)
+            .map((room) => ({
+              id: room.tenant_id || 0,
+              name: room.tenant_name!,
+              email: room.tenant_email!,
+              room: `${room.nomor_kamar} - ${room.tipe_kamar}`,
+              status: room.status === 'terisi' ? 'Aktif' : 'Tidak Aktif',
+            }));
+        }
+        
+        setTenants(extractedTenants);
       } catch (err: any) {
-        console.error('Failed to load admin dashboard data', err);
-        setError(err.response?.data?.message || 'Gagal memuat data dashboard');
+        const errorMessage = err.response?.data?.message || 'Gagal memuat data dashboard';
+        
+        // Check for specific database errors
+        if (errorMessage.includes('Table') && errorMessage.includes("doesn't exist")) {
+          console.error('Database table missing:', errorMessage);
+          // Try to continue with available data
+          if (rooms.length > 0) {
+            // Extract tenant data from rooms as fallback
+            const extractedTenants = rooms
+              .filter(room => room.tenant_name && room.tenant_email)
+              .map((room) => ({
+                id: room.tenant_id || 0,
+                name: room.tenant_name!,
+                email: room.tenant_email!,
+                room: `${room.nomor_kamar} - ${room.tipe_kamar}`,
+                status: room.status === 'terisi' ? 'Aktif' : 'Tidak Aktif',
+              }));
+            setTenants(extractedTenants);
+          }
+          setError('Database error: Beberapa data mungkin tidak tersedia. Silakan hubungi administrator.');
+        } else if (errorMessage.includes('Hanya pemilik kost')) {
+          console.error('Role access error:', errorMessage);
+          setError('Akses ditolak: Anda tidak memiliki izin untuk mengakses data ini.');
+        } else {
+          setError(errorMessage);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -80,7 +120,7 @@ export const AdminDashboardPage: React.FC = () => {
     .reduce((sum, p) => sum + p.nominal_tagihan, 0);
 
   const primaryKost = user?.kosts && user.kosts.length > 0 ? user.kosts[0] : undefined;
-  const profileKost = user?.ownerProfile || null;
+  const profileKost = user?.adminProfile || null;
 
   const propertyName =
     profileKost?.nama_kost ||
@@ -99,190 +139,143 @@ export const AdminDashboardPage: React.FC = () => {
   return (
     <AdminLayout>
       {/* Header - Responsive */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 md:p-3 bg-blue-500 rounded-lg">
-              <Building2 className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </div>
-            <h2 className="text-xl md:text-3xl font-bold text-gray-900">Dashboard</h2>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 md:p-3 bg-blue-500 rounded-lg">
+            <Building2 className="w-5 h-5 md:w-6 md:h-6 text-white" />
           </div>
-          
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <Menu className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
+          <h2 className="text-xl md:text-3xl font-bold text-gray-900">Dashboard</h2>
         </div>
+      </div>
 
-        {/* Mobile Menu Overlay */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50">
-            <div className="fixed right-0 top-0 h-full w-64 bg-white shadow-xl">
-              <div className="p-4 border-b">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-gray-900">Menu</h3>
-                  <button
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="p-2 rounded-lg hover:bg-gray-100"
-                  >
-                    <X className="w-5 h-5 text-gray-600" />
-                  </button>
-                </div>
-              </div>
-              <nav className="p-4 space-y-2">
-                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 flex items-center gap-3">
-                  <Home className="w-5 h-5 text-gray-600" />
-                  <span>Dashboard</span>
-                </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 flex items-center gap-3">
-                  <Users className="w-5 h-5 text-gray-600" />
-                  <span>Penyewa</span>
-                </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 flex items-center gap-3">
-                  <CreditCard className="w-5 h-5 text-gray-600" />
-                  <span>Pembayaran</span>
-                </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 flex items-center gap-3">
-                  <Building2 className="w-5 h-5 text-gray-600" />
-                  <span>Fasilitas</span>
-                </button>
-              </nav>
-            </div>
-          </div>
-        )}
-        
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
         {/* Stat cards - Responsive */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
-          <div className="bg-blue-50 rounded-xl p-3 md:p-5 flex items-center">
-            <div className="p-2 md:p-3 bg-blue-500 rounded-lg">
-              <Building2 className="w-4 h-4 md:w-6 md:h-6 text-white" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="bg-blue-50 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 flex items-center shadow-sm hover:shadow-md transition-shadow">
+            <div className="p-2 sm:p-2.5 md:p-3 bg-blue-500 rounded-lg flex-shrink-0">
+              <Building2 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
             </div>
-            <div className="ml-3 md:ml-4">
-              <p className="text-xs md:text-sm text-gray-600">Total Kost</p>
-              <p className="text-lg md:text-2xl font-bold text-gray-900">{totalKost}</p>
-            </div>
-          </div>
-
-          <div className="bg-green-50 rounded-xl p-3 md:p-5 flex items-center">
-            <div className="p-2 md:p-3 bg-green-500 rounded-lg">
-              <Home className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-            <div className="ml-3 md:ml-4">
-              <p className="text-xs md:text-sm text-gray-600">Total Kamar</p>
-              <p className="text-lg md:text-2xl font-bold text-gray-900">{totalRooms}</p>
+            <div className="ml-2 sm:ml-3 md:ml-4 min-w-0">
+              <p className="text-xs sm:text-xs md:text-sm text-gray-600 truncate">Total Kost</p>
+              <p className="text-base sm:text-lg md:text-2xl font-bold text-gray-900">{totalKost}</p>
             </div>
           </div>
 
-          <div className="bg-yellow-50 rounded-xl p-3 md:p-5 flex items-center">
-            <div className="p-2 md:p-3 bg-yellow-500 rounded-lg">
-              <DollarSign className="w-4 h-4 md:w-6 md:h-6 text-white" />
+          <div className="bg-green-50 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 flex items-center shadow-sm hover:shadow-md transition-shadow">
+            <div className="p-2 sm:p-2.5 md:p-3 bg-green-500 rounded-lg flex-shrink-0">
+              <Home className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
             </div>
-            <div className="ml-3 md:ml-4">
-              <p className="text-xs md:text-sm text-gray-600">Total Pendapatan</p>
-              <p className="text-lg md:text-2xl font-bold text-gray-900">
+            <div className="ml-2 sm:ml-3 md:ml-4 min-w-0">
+              <p className="text-xs sm:text-xs md:text-sm text-gray-600 truncate">Total Kamar</p>
+              <p className="text-base sm:text-lg md:text-2xl font-bold text-gray-900">{totalRooms}</p>
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 flex items-center shadow-sm hover:shadow-md transition-shadow">
+            <div className="p-2 sm:p-2.5 md:p-3 bg-yellow-500 rounded-lg flex-shrink-0">
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+            </div>
+            <div className="ml-2 sm:ml-3 md:ml-4 min-w-0">
+              <p className="text-xs sm:text-xs md:text-sm text-gray-600 truncate">Total Pendapatan</p>
+              <p className="text-xs sm:text-sm md:text-lg lg:text-2xl font-bold text-gray-900 truncate">
                 Rp {totalRevenue.toLocaleString('id-ID')}
               </p>
             </div>
           </div>
 
-          <div className="bg-purple-50 rounded-xl p-3 md:p-5 flex items-center">
-            <div className="p-2 md:p-3 bg-purple-500 rounded-lg">
-              <CreditCard className="w-4 h-4 md:w-6 md:h-6 text-white" />
+          <div className="bg-purple-50 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 flex items-center shadow-sm hover:shadow-md transition-shadow">
+            <div className="p-2 sm:p-2.5 md:p-3 bg-purple-500 rounded-lg flex-shrink-0">
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
             </div>
-            <div className="ml-3 md:ml-4">
-              <p className="text-xs md:text-sm text-gray-600">Menunggu Pembayaran</p>
-              <p className="text-lg md:text-2xl font-bold text-gray-900">{pendingPayments}</p>
+            <div className="ml-2 sm:ml-3 md:ml-4 min-w-0">
+              <p className="text-xs sm:text-xs md:text-sm text-gray-600 truncate">Menunggu Pembayaran</p>
+              <p className="text-base sm:text-lg md:text-2xl font-bold text-gray-900">{pendingPayments}</p>
             </div>
           </div>
         </div>
 
         {/* Financial Summary - Responsive */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 md:p-6 border border-green-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500 rounded-lg">
-                  <TrendingUp className="w-5 h-5 text-white" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg sm:rounded-xl p-4 sm:p-6 border border-green-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-green-500 rounded-lg">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Pendapatan Bulan Ini</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Pendapatan Bulan Ini</h3>
               </div>
             </div>
-            <p className="text-3xl font-bold text-green-600 mb-2">
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-green-600 mb-1 sm:mb-2 truncate">
               Rp {thisMonthRevenue.toLocaleString('id-ID')}
             </p>
-            <p className="text-sm text-green-700">
+            <p className="text-xs sm:text-sm text-green-700">
               {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
             </p>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500 rounded-lg">
-                  <Users className="w-5 h-5 text-white" />
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg sm:rounded-xl p-4 sm:p-6 border border-blue-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-blue-500 rounded-lg">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Statistik Penyewa</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Statistik Penyewa</h3>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <p className="text-2xl font-bold text-blue-600">{totalTenants}</p>
-                <p className="text-sm text-blue-700">Total Penyewa</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-600">{totalTenants}</p>
+                <p className="text-xs sm:text-sm text-blue-700">Total Penyewa</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-600">{availableRooms}</p>
-                <p className="text-sm text-blue-700">Kamar Tersedia</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-600">{availableRooms}</p>
+                <p className="text-xs sm:text-sm text-blue-700">Kamar Tersedia</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Main content: property + rooms + tenants */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left: Kost & Rooms */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Kost summary */}
-            <div className="bg-gray-50 rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <Building2 className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                   {propertyName}
                 </h3>
               </div>
-              <p className="text-sm text-gray-600 mb-1">{propertyAddress}</p>
+              <p className="text-xs sm:text-sm text-gray-600 mb-1 break-words">{propertyAddress}</p>
               <p className="text-xs text-gray-500">
                 Informasi ini berasal dari data profil pemilik & kost.
               </p>
             </div>
 
             {/* Rooms summary */}
-            <div className="bg-gray-50 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Ringkasan Kamar</h3>
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Ringkasan Kamar</h3>
               </div>
               {recentRooms.length === 0 ? (
-                <p className="text-sm text-gray-500">Belum ada kamar yang terdaftar.</p>
+                <p className="text-xs sm:text-sm text-gray-500">Belum ada kamar yang terdaftar.</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2.5 sm:space-y-3">
                   {recentRooms.map((room) => (
                     <div
                       key={room.id}
-                      className="border border-gray-200 rounded-lg p-4 bg-white"
+                      className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-white hover:shadow-sm transition-shadow"
                     >
                       {/* Room Header */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">
+                      <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
                             {room.nomor_kamar} - {room.tipe_kamar}
                           </p>
                           <p className="text-xs text-gray-500">
@@ -290,7 +283,7 @@ export const AdminDashboardPage: React.FC = () => {
                           </p>
                         </div>
                         <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          className={`inline-flex px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full flex-shrink-0 ${
                             room.status === 'tersedia'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-gray-100 text-gray-800'
@@ -351,30 +344,30 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
 
           {/* Right: Tenants summary */}
-          <div className="space-y-6">
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
                 Penyewa Terbaru
               </h3>
               {recentTenants.length === 0 ? (
-                <p className="text-sm text-gray-500">
+                <p className="text-xs sm:text-sm text-gray-500">
                   Belum ada penyewa yang terdaftar dari undangan.
                 </p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2.5 sm:space-y-3">
                   {recentTenants.map((tenant) => (
                     <div
                       key={tenant.id}
-                      className="border border-gray-200 rounded-lg px-4 py-3 bg-white"
+                      className="border border-gray-200 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 bg-white hover:shadow-sm transition-shadow"
                     >
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
                         {tenant.name}
                       </p>
-                      <p className="text-xs text-gray-500">{tenant.email}</p>
-                      <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-                        <span>Kamar: {tenant.room}</span>
+                      <p className="text-xs text-gray-500 truncate">{tenant.email}</p>
+                      <div className="mt-2 flex items-center justify-between gap-2 text-xs text-gray-500">
+                        <span className="truncate">Kamar: {tenant.room}</span>
                         <span
-                          className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${
+                          className={`inline-flex px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold flex-shrink-0 ${
                             tenant.status === 'Aktif'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-gray-100 text-gray-700'

@@ -108,11 +108,44 @@ export const invitationService = {
     }
 
     const response = await api.get<{ success: boolean; data: OwnerTenantApi[] }>(
-      '/owner/tenants'
+      '/admin/tenants'
     );
     const data = response.data.data || [];
     ownerTenantsCache = data;
     ownerTenantsCacheTimestamp = now;
     return data;
+  },
+
+  async getAdminTenants(force = false): Promise<OwnerTenantApi[]> {
+    const now = Date.now();
+
+    if (
+      !force &&
+      ownerTenantsCache &&
+      ownerTenantsCacheTimestamp &&
+      now - ownerTenantsCacheTimestamp < OWNER_TENANTS_CACHE_TTL_MS
+    ) {
+      return ownerTenantsCache;
+    }
+
+    try {
+      // Try admin endpoint first
+      const response = await api.get<{ success: boolean; data: OwnerTenantApi[] }>(
+        '/admin/tenants'
+      );
+      const data = response.data.data || [];
+      ownerTenantsCache = data;
+      ownerTenantsCacheTimestamp = now;
+      return data;
+    } catch (error: any) {
+      // If admin endpoint fails (404 or 403), fallback to regular tenants endpoint
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        console.log('Admin tenants endpoint not available, falling back to regular tenants endpoint');
+        // Try /tenants endpoint instead
+        throw error;
+      }
+      // Re-throw other errors
+      throw error;
+    }
   },
 };

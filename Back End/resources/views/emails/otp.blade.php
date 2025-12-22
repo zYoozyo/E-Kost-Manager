@@ -11,7 +11,7 @@
         # **{{ $otp }}**
     </x-mail::panel>
 
-    Kode ini berlaku selama {{ config('otp.expires_in') / 60 }} menit. Harap jangan berikan kode ini kepada siapa pun.
+    Kode ini berlaku selama 10 menit. Harap jangan berikan kode ini kepada siapa pun.
 
     Jika Anda tidak merasa melakukan permintaan ini, abaikan email ini.
 

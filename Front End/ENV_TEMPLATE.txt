@@ -1,0 +1,5 @@
+# API Base URL
+# Ganti dengan URL backend production Anda
+# Copy file ini menjadi .env.production sebelum build
+VITE_API_URL=https://api.ekostmanager.com/api
+

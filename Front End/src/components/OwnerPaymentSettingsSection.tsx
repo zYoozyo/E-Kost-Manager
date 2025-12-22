@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { ownerPaymentSettingsService, OwnerPaymentSettings } from '../services/ownerPaymentSettingsService';
 import toast from 'react-hot-toast';
-import { CreditCard, Edit3, Save, X, Check, AlertCircle } from 'lucide-react';
+import { CreditCard, Edit3, Save, X, Check, AlertCircle, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
 
 export const OwnerPaymentSettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<OwnerPaymentSettings | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [qrisImageFile, setQrisImageFile] = useState<File | null>(null);
+  const [qrisImagePreview, setQrisImagePreview] = useState<string | null>(null);
   const [form, setForm] = useState({
     bank_name: '',
     bank_account_number: '',
@@ -37,7 +39,9 @@ export const OwnerPaymentSettingsSection: React.FC = () => {
     const load = async () => {
       try {
         setIsLoading(true);
+        console.log('Loading owner payment settings...');
         const data = await ownerPaymentSettingsService.get();
+        console.log('Payment settings received:', data);
         setSettings(data);
         if (data) {
           setForm({
@@ -46,6 +50,10 @@ export const OwnerPaymentSettingsSection: React.FC = () => {
             bank_account_holder: data.bank_account_holder ?? '',
             qris_payload: data.qris_payload ?? '',
           });
+          // Set preview untuk QRIS image yang sudah ada
+          if (data.qris_image_url) {
+            setQrisImagePreview(data.qris_image_url);
+          }
         }
       } catch (error: any) {
         console.error('Failed to load owner payment settings', error);
@@ -63,11 +71,65 @@ export const OwnerPaymentSettingsSection: React.FC = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleQrisImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('File harus berupa gambar');
+        return;
+      }
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Ukuran file maksimal 2MB');
+        return;
+      }
+      setQrisImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setQrisImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveQrisImage = () => {
+    setQrisImageFile(null);
+    setQrisImagePreview(null);
+    // Reset file input
+    const fileInput = document.getElementById('qris-image-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      const updated = await ownerPaymentSettingsService.update(form);
-      setSettings(updated);
+      
+      // Jika ada file QRIS image, gunakan FormData
+      if (qrisImageFile) {
+        const formData = new FormData();
+        formData.append('bank_name', form.bank_name);
+        formData.append('bank_account_number', form.bank_account_number);
+        formData.append('bank_account_holder', form.bank_account_holder);
+        formData.append('qris_payload', form.qris_payload);
+        formData.append('qris_image', qrisImageFile);
+        
+        const updated = await ownerPaymentSettingsService.update(formData);
+        setSettings(updated);
+        setQrisImageFile(null);
+        // Update preview dengan URL dari server
+        if (updated.qris_image_url) {
+          setQrisImagePreview(updated.qris_image_url);
+        }
+      } else {
+        // Jika tidak ada file, gunakan JSON biasa
+        const updated = await ownerPaymentSettingsService.update(form);
+        setSettings(updated);
+      }
+      
       setIsEditing(false);
       toast.success('Pengaturan pembayaran berhasil disimpan');
     } catch (error: any) {
@@ -92,6 +154,18 @@ export const OwnerPaymentSettingsSection: React.FC = () => {
         bank_account_holder: settings.bank_account_holder ?? '',
         qris_payload: settings.qris_payload ?? '',
       });
+      // Reset QRIS image preview
+      if (settings.qris_image_url) {
+        setQrisImagePreview(settings.qris_image_url);
+      } else {
+        setQrisImagePreview(null);
+      }
+    }
+    setQrisImageFile(null);
+    // Reset file input
+    const fileInput = document.getElementById('qris-image-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
     }
   };
 
@@ -107,7 +181,7 @@ export const OwnerPaymentSettingsSection: React.FC = () => {
             Informasi ini akan digunakan penyewa untuk melakukan pembayaran melalui transfer bank atau QRIS.
           </p>
         </div>
-        {!isEditing && settings && (settings.bank_name || settings.bank_account_number || settings.bank_account_holder || settings.qris_payload) && (
+        {!isEditing && settings && (settings.bank_name || settings.bank_account_number || settings.bank_account_holder || settings.qris_payload || settings.qris_image_url) && (
           <button
             type="button"
             onClick={handleEdit}
@@ -213,21 +287,75 @@ export const OwnerPaymentSettingsSection: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              QRIS Payload / Link
-            </label>
-            <textarea
-              name="qris_payload"
-              value={form.qris_payload}
-              onChange={handleChange}
-              rows={3}
-              placeholder="Tempel data QRIS statis dari merchant (opsional, bisa diisi nanti)"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Data ini tidak ditampilkan ke publik sebagai teks mentah. Frontend akan mengubahnya menjadi QR code untuk tenant.
-            </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                QRIS Payload / Link
+              </label>
+              <textarea
+                name="qris_payload"
+                value={form.qris_payload}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Tempel data QRIS statis dari merchant (opsional, bisa diisi nanti)"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Data ini tidak ditampilkan ke publik sebagai teks mentah. Frontend akan mengubahnya menjadi QR code untuk tenant.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload Foto QRIS
+              </label>
+              <div className="space-y-3">
+                {qrisImagePreview ? (
+                  <div className="relative border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-gray-700">Preview QRIS</span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveQrisImage}
+                        className="text-red-500 hover:text-red-700 transition-colors p-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="flex justify-center">
+                      <img
+                        src={qrisImagePreview}
+                        alt="QRIS Preview"
+                        className="max-w-full h-auto max-h-48 rounded-lg border border-gray-300 shadow-sm"
+                      />
+                    </div>
+                  </div>
+                ) : null}
+                
+                <label
+                  htmlFor="qris-image-input"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Klik untuk upload</span> atau drag & drop
+                    </p>
+                    <p className="text-xs text-gray-500">PNG, JPG (MAX. 2MB)</p>
+                  </div>
+                  <input
+                    id="qris-image-input"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={handleQrisImageChange}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-xs text-gray-400">
+                  Upload foto QRIS Anda. Foto ini akan ditampilkan kepada penyewa untuk melakukan pembayaran.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4 border-t">
@@ -254,7 +382,7 @@ export const OwnerPaymentSettingsSection: React.FC = () => {
       ) : (
         // MODE VIEW (card)
         <div className="space-y-6">
-          {settings && (settings.bank_name || settings.bank_account_number || settings.bank_account_holder || settings.qris_payload) ? (
+          {settings && (settings.bank_name || settings.bank_account_number || settings.bank_account_holder || settings.qris_payload || settings.qris_image_url) ? (
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Card Transfer Bank */}
               <div className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -288,13 +416,28 @@ export const OwnerPaymentSettingsSection: React.FC = () => {
                     QRIS (Opsional)
                   </h4>
                 </div>
-                <div className="p-6 flex items-center justify-center min-h-[160px]">
-                  {settings.qris_payload ? (
+                <div className="p-6">
+                  {settings.qris_image_url ? (
+                    <div className="text-center space-y-3">
+                      <div className="flex justify-center">
+                        <img
+                          src={settings.qris_image_url}
+                          alt="QRIS"
+                          className="max-w-full h-auto max-h-64 rounded-lg border-2 border-gray-200 shadow-md mx-auto"
+                        />
+                      </div>
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
+                        <Check className="w-6 h-6 text-green-600" />
+                      </div>
+                      <p className="text-xs text-gray-600 font-medium">Foto QRIS tersimpan</p>
+                      <p className="text-xs text-gray-400">Akan ditampilkan ke tenant untuk pembayaran</p>
+                    </div>
+                  ) : settings.qris_payload ? (
                     <div className="text-center">
                       <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
                         <Check className="w-8 h-8 text-green-600" />
                       </div>
-                      <p className="text-xs text-gray-600 font-medium">QRIS tersimpan</p>
+                      <p className="text-xs text-gray-600 font-medium">QRIS Payload tersimpan</p>
                       <p className="text-xs text-gray-400 mt-1">Akan ditampilkan ke tenant sebagai QR code</p>
                     </div>
                   ) : (
@@ -303,7 +446,7 @@ export const OwnerPaymentSettingsSection: React.FC = () => {
                         <AlertCircle className="w-8 h-8 text-gray-400" />
                       </div>
                       <p className="text-xs text-gray-500 font-medium">QRIS belum diatur</p>
-                      <p className="text-xs text-gray-400 mt-1">Tambahkan nanti jika sudah punya merchant QRIS</p>
+                      <p className="text-xs text-gray-400 mt-1">Tambahkan foto QRIS atau payload QRIS</p>
                     </div>
                   )}
                 </div>

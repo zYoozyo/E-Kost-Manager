@@ -7,6 +7,9 @@ import { useAuth } from '../../contexts/AuthContext';
 export const AdminProfilePage: React.FC = () => {
   const { user } = useAuth();
 
+  console.log('AdminProfilePage - User role:', user?.role);
+  console.log('AdminProfilePage - User data:', user);
+
   return (
     <AdminLayout>
       <div>

@@ -7,6 +7,7 @@ use App\Models\Kamar;
 use App\Models\Pembayaran;
 use App\Services\PaymentGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -32,43 +33,53 @@ class PembayaranController extends Controller
         ], 403);
     }
 
-    protected function ownerPayments(Request $request)
+    public function ownerPayments(Request $request)
     {
         $owner = $request->user();
 
-        $query = Pembayaran::with([
-            'tenant:id,name,whatsapp',
-            'kamar:id,nomor_kamar,kost_id',
-            'kamar.kost:id,nama_kost',
-        ])
-            ->forOwner($owner->id)
-            ->when($request->filled('status'), function ($q) use ($request) {
-                $q->where('status', $request->status);
-            })
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $q->where(function ($inner) use ($request) {
-                    $search = '%'.$request->search.'%';
-                    $inner->where('invoice_code', 'like', $search)
-                        ->orWhereHas('tenant', function ($tenantQuery) use ($search) {
-                            $tenantQuery->where('name', 'like', $search);
-                        })
-                        ->orWhereHas('kamar', function ($roomQuery) use ($search) {
-                            $roomQuery->where('nomor_kamar', 'like', $search);
-                        });
-                });
-            })
-            ->orderByDesc('due_date');
+        try {
+            $query = Pembayaran::with([
+                'tenant:id,name,whatsapp',
+                'kamar:id,nomor_kamar,kost_id',
+                'kamar.kost:id,nama_kost',
+            ])
+                ->forOwner($owner->id)
+                ->when($request->filled('status'), function ($q) use ($request) {
+                    $q->where('status', $request->status);
+                })
+                ->when($request->filled('search'), function ($q) use ($request) {
+                    $q->where(function ($inner) use ($request) {
+                        $search = '%'.$request->search.'%';
+                        $inner->where('invoice_code', 'like', $search)
+                            ->orWhereHas('tenant', function ($tenantQuery) use ($search) {
+                                $tenantQuery->where('name', 'like', $search);
+                            })
+                            ->orWhereHas('kamar', function ($roomQuery) use ($search) {
+                                $roomQuery->where('nomor_kamar', 'like', $search);
+                            });
+                    });
+                })
+                ->orderByDesc('due_date');
 
-        $perPage = (int) ($request->get('per_page', 15));
-        $payments = $query->paginate($perPage);
+            $perPage = (int) ($request->get('per_page', 15));
+            $payments = $query->paginate($perPage);
 
-        $summary = $this->ownerSummary($owner->id);
+            $summary = $this->ownerSummary($owner->id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $payments,
-            'summary' => $summary,
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $payments,
+                'summary' => $summary,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in ownerPayments: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memuat data pembayaran',
+                'data' => [],
+                'summary' => []
+            ]);
+        }
     }
 
     protected function tenantPayments(Request $request)

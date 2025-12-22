@@ -59,20 +59,20 @@ export const AdminTenantsPage: React.FC = () => {
       setError(null);
 
       const [response, roomsData] = await Promise.all([
-        api.get<{ success: boolean; data: any[] }>('/owner/tenants'),
-        roomService.getOwnerRooms(),
+        api.get<{ success: boolean; data: any[] }>('/admin/tenants'),
+        roomService.getAdminRooms(),
       ]);
       
       const data = response.data.data || [];
 
       const mapped = data.map((t) => ({
-        id: t.id,
-        name: t.name,
-        email: t.email,
-        phone: t.phone || t.whatsapp || '-',
-        room: t.room || '-',
-        status: t.status || 'Aktif',
-      }));
+                id: t.id,
+                name: t.name,
+                email: t.email,
+                phone: t.phone || t.whatsapp || '-',
+                room: t.room || '-',
+                status: (t.room && t.room !== '-') ? 'Aktif' : 'Tidak Aktif',
+              }));
 
       setTenants(mapped);
       setRooms(roomsData);
@@ -128,7 +128,7 @@ export const AdminTenantsPage: React.FC = () => {
       // Tentukan kamar akhir untuk tenant ini
       const newRoom = results.find((r) => r.tenant_id === tenantId) || null;
       const finalRoomLabel = newRoom ? newRoom.nomor_kamar : '-';
-      const finalStatus = finalRoomLabel === '-' ? 'Tidak Aktif' : 'Aktif';
+      const finalStatus = (finalRoomLabel && finalRoomLabel !== '-') ? 'Aktif' : 'Tidak Aktif';
 
       setTenants((prev) =>
         prev.map((t) =>
@@ -161,54 +161,116 @@ export const AdminTenantsPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="bg-white rounded-xl shadow-sm p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-500 rounded-lg">
-              <Users className="w-6 h-6 text-white" />
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 md:p-8">
+        {/* Header - Responsive */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-3 bg-purple-500 rounded-lg">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">Penyewa</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Penyewa</h2>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="relative flex-1 sm:flex-initial sm:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="text"
                 placeholder="Cari penyewa..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent min-h-[44px]"
               />
             </div>
           </div>
         </div>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-4 rounded-lg bg-red-50 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-red-700">
             {error}
           </div>
         )}
 
-        <div className="overflow-x-auto">
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-2.5 sm:space-y-3">
+          {filteredTenants.map((tenant) => {
+            const isActiveTenant = tenant.status === 'Aktif';
+            const statusClass = isActiveTenant
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800';
+
+            return (
+              <div key={tenant.id} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <h3 className="font-semibold text-sm sm:text-base text-gray-900 mb-1 truncate">{tenant.name}</h3>
+                    <p className="text-xs text-gray-600 truncate">{tenant.email}</p>
+                    <p className="text-xs text-gray-500 mt-1">{tenant.phone}</p>
+                  </div>
+                  <span className={`inline-flex px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full flex-shrink-0 ${statusClass}`}>
+                    {tenant.status}
+                  </span>
+                </div>
+                
+                <div className="space-y-2 mb-2.5 sm:mb-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`inline-flex px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${
+                      tenant.room !== '-' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {tenant.room !== '-' ? `Kamar: ${tenant.room}` : 'Belum ada kamar'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-2.5 sm:pt-3 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setRoomModalTenant(tenant)}
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center px-2.5 sm:px-3 py-1.5 text-xs rounded bg-purple-50 text-purple-700 hover:bg-purple-100 disabled:opacity-50 min-h-[36px] touch-manipulation"
+                    disabled={assigningTenantId === tenant.id}
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    <span className="truncate">Atur Kamar</span>
+                  </button>
+                  <button
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center px-2.5 sm:px-3 py-1.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 min-h-[36px] touch-manipulation"
+                    onClick={() => {
+                      setSelectedTenant(tenant);
+                      setShowTenantModal(true);
+                    }}
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    <Eye className="w-3 h-3 mr-1 flex-shrink-0" />
+                    <span className="truncate">Detail</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Nama
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Nomor Telepon
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Kamar
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Aksi
                 </th>
               </tr>
@@ -230,52 +292,49 @@ export const AdminTenantsPage: React.FC = () => {
 
                 return (
                   <tr key={tenant.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-4 lg:px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       {tenant.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 lg:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                       {tenant.email}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 lg:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                       {tenant.phone}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        tenant.room !== '-' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                      >
-                        {tenant.room !== '-' ? `Kamar: ${tenant.room}` : 'Belum ada kamar'}
-                      </span>
-
-                      {/* Tombol buka modal pengaturan kamar */}
-                      <button
-                        type="button"
-                        onClick={() => setRoomModalTenant(tenant)}
-                        className="ml-2 inline-flex items-center justify-center px-3 py-1 text-xs font-medium border border-purple-200 text-purple-700 rounded-md bg-white hover:bg-purple-50 hover:border-purple-400 transition-colors"
-                        disabled={assigningTenantId === tenant.id}
-                      >
-                        Atur Kamar
-                      </button>
+                    <td className="px-4 lg:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          tenant.room !== '-' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {tenant.room !== '-' ? `Kamar: ${tenant.room}` : 'Belum ada kamar'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setRoomModalTenant(tenant)}
+                          className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium border border-purple-200 text-purple-700 rounded-md bg-white hover:bg-purple-50 hover:border-purple-400 transition-colors"
+                          disabled={assigningTenantId === tenant.id}
+                        >
+                          Atur Kamar
+                        </button>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 lg:px-6 py-3 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusClass}`}>
                         {tenant.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="text-blue-600 hover:text-blue-900"
-                          onClick={() => {
-                            setSelectedTenant(tenant);
-                            setShowTenantModal(true);
-                          }}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </div>
+                    <td className="px-4 lg:px-6 py-3 whitespace-nowrap text-sm font-medium">
+                      <button
+                        className="text-blue-600 hover:text-blue-900"
+                        onClick={() => {
+                          setSelectedTenant(tenant);
+                          setShowTenantModal(true);
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 );

@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  requiredRole 
+  requiredRole
 }) => {
   const { user, isLoading } = useAuth();
 
@@ -22,10 +22,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth/login" replace />;
   }
 
   if (requiredRole && user.role !== requiredRole) {
+    console.log('ProtectedRoute: Access denied - Required:', requiredRole, 'User has:', user.role);
     return <Navigate to="/unauthorized" replace />;
   }
 

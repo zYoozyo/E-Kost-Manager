@@ -12,9 +12,10 @@ export interface User {
   whatsapp?: string;
   address?: string;
   avatar?: string;
+  avatar_url?: string;
   created_at: string;
   updated_at: string;
-  ownerProfile?: {
+  adminProfile?: {
     id: number;
     nama_kost?: string;
     alamat?: string;
@@ -157,6 +158,16 @@ export interface OtpRequestResponse {
 }
 
 export interface VerifyOtpResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface ResetPasswordResponse {
   success: boolean;
   message: string;
 }

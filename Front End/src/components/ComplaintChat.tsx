@@ -9,7 +9,7 @@ interface ComplaintChatProps {
   complaintTitle: string;
   complaintDescription: string;
   tenantName: string;
-  role: 'tenant' | 'owner';
+  role: 'tenant' | 'admin';
   responses: ComplaintResponse[];
   isLoading: boolean;
   status: 'pending' | 'in_progress' | 'resolved';
@@ -117,15 +117,15 @@ export function ComplaintChat({
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            {role === 'owner' ? (
+            {role === 'admin' ? (
               <>
                 <User className="w-4 h-4" />
-                <span>{tenantName}</span>
+                <span>{tenantName} (Penyewa)</span>
               </>
             ) : (
               <>
                 <Building className="w-4 h-4" />
-                <span>Pemilik</span>
+                <span>Pemilik Kost</span>
               </>
             )}
           </div>
@@ -134,17 +134,23 @@ export function ComplaintChat({
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-        {/* Initial complaint message */}
-        <div className="flex gap-3">
-          <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+        {/* Initial complaint message - always from tenant's perspective */}
+        <div className={`flex gap-3 ${role === 'tenant' ? 'flex-row-reverse' : ''}`}>
+          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+            role === 'tenant' ? 'bg-orange-500' : 'bg-blue-500'
+          }`}>
             <User className="w-4 h-4 text-white" />
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
+          <div className={`flex-1 ${role === 'tenant' ? 'text-right' : ''}`}>
+            <div className={`flex items-center gap-2 mb-1 ${role === 'tenant' ? 'justify-end' : ''}`}>
               <span className="text-sm font-medium text-gray-900">{tenantName}</span>
               <span className="text-xs text-gray-500">Penyewa</span>
             </div>
-            <div className="bg-white rounded-lg p-3 max-w-lg shadow-sm border border-gray-100">
+            <div className={`inline-block rounded-lg p-3 max-w-lg ${
+              role === 'tenant' 
+                ? 'bg-orange-500 text-white shadow-md'
+                : 'bg-white text-gray-800 shadow-sm border border-gray-100'
+            }`}>
               <p className="text-sm text-gray-800 whitespace-pre-wrap">{complaintDescription}</p>
             </div>
           </div>
@@ -168,6 +174,9 @@ export function ComplaintChat({
           const showDateSeparator = index === 0 || 
             new Date(response.created_at).toDateString() !== new Date(sortedResponses[index - 1].created_at).toDateString();
           
+          // Determine message alignment based on current user role and response ownership
+          const isCurrentUserMessage = (role === 'admin' && response.is_owner_response) || (role === 'tenant' && !response.is_owner_response);
+          
           return (
             <React.Fragment key={response.id}>
               {showDateSeparator && index > 0 && (
@@ -181,18 +190,18 @@ export function ComplaintChat({
                   </div>
                 </div>
               )}
-              <div className={`flex gap-3 ${response.is_owner_response ? 'flex-row-reverse' : ''}`}>
+              <div className={`flex gap-3 ${isCurrentUserMessage ? 'flex-row-reverse' : ''}`}>
                 <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                  response.is_owner_response ? 'bg-orange-500' : 'bg-blue-500'
+                  isCurrentUserMessage ? 'bg-orange-500' : 'bg-blue-500'
                 }`}>
-                  {response.is_owner_response ? (
-                    <Building className="w-4 h-4 text-white" />
+                  {isCurrentUserMessage ? (
+                    role === 'admin' ? <Building className="w-4 h-4 text-white" /> : <User className="w-4 h-4 text-white" />
                   ) : (
-                    <User className="w-4 h-4 text-white" />
+                    role === 'admin' ? <User className="w-4 h-4 text-white" /> : <Building className="w-4 h-4 text-white" />
                   )}
                 </div>
-                <div className={`flex-1 ${response.is_owner_response ? 'text-right' : ''}`}>
-                  <div className={`flex items-center gap-2 mb-1 ${response.is_owner_response ? 'justify-end' : ''}`}>
+                <div className={`flex-1 ${isCurrentUserMessage ? 'text-right' : ''}`}>
+                  <div className={`flex items-center gap-2 mb-1 ${isCurrentUserMessage ? 'justify-end' : ''}`}>
                     <span className="text-sm font-medium text-gray-900">
                       {response.user?.name || (response.is_owner_response ? 'Pemilik' : 'Penyewa')}
                     </span>
@@ -201,13 +210,13 @@ export function ComplaintChat({
                     </span>
                   </div>
                   <div className={`inline-block rounded-lg p-3 max-w-lg ${
-                    response.is_owner_response 
+                    isCurrentUserMessage 
                       ? 'bg-orange-500 text-white shadow-md' 
                       : 'bg-white text-gray-800 shadow-sm border border-gray-100'
                   }`}>
                     <p className="text-sm whitespace-pre-wrap break-words">{response.message}</p>
                   </div>
-                  <div className={`text-xs text-gray-400 mt-1 ${response.is_owner_response ? 'text-right' : ''}`}>
+                  <div className={`text-xs text-gray-400 mt-1 ${isCurrentUserMessage ? 'text-right' : ''}`}>
                     {formatTime(response.created_at)}
                   </div>
                 </div>
@@ -259,7 +268,7 @@ export function ComplaintChat({
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={
-                  role === 'owner' 
+                  role === 'admin' 
                     ? 'Tulis balasan Anda untuk penyewa...' 
                     : 'Tulis balasan Anda untuk pemilik...'
                 }

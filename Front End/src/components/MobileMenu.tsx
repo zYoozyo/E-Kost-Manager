@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, X, Home, User, Building2, Plus, CreditCard, Users, FileText } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +11,26 @@ const MobileMenu: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
 
-  // Menu per role
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      // Prevent iOS bounce scroll
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    };
+  }, [isOpen]);
+
+  // Menu per role (excluding Dashboard which has separate button)
   const adminItems: Item[] = [
     { id: 'profile', label: 'Profil', icon: User, to: '/admin/profile' },
     { id: 'facilities', label: 'Fasilitas', icon: Building2, to: '/admin/facilities' },
@@ -22,7 +41,6 @@ const MobileMenu: React.FC = () => {
   ];
 
   const tenantItems: Item[] = [
-    { id: 'overview', label: 'Beranda', icon: Home, to: '/tenant/overview' },
     { id: 'payments', label: 'Pembayaran', icon: CreditCard, to: '/tenant/payments' },
     { id: 'complaints', label: 'Aduan', icon: FileText, to: '/tenant/complaints' },
     { id: 'profile', label: 'Profil', icon: User, to: '/tenant/profile' },
@@ -32,12 +50,21 @@ const MobileMenu: React.FC = () => {
 
   const getActiveId = () => {
     const currentPath = location.pathname;
-    const found = items.find((it) => it.to && currentPath.startsWith(it.to));
-    if (found) return found.id;
-    if (currentPath === '/admin' || currentPath === '/tenant') {
-      return items[0].id;
+
+    // 1) Exact match to item.to (prioritize exact match)
+    const exact = items.find((it) => it.to === currentPath);
+    if (exact) return exact.id;
+
+    // 2) Root dashboard routes (only if exact path matches)
+    if (currentPath === '/admin' && user?.role === 'admin') {
+      return 'dashboard';
     }
-    return items[0].id;
+    if (currentPath === '/tenant' && user?.role === 'tenant') {
+      return 'overview';
+    }
+
+    // 3) No match found - return undefined (no active item)
+    return undefined;
   };
 
   const active = getActiveId();
@@ -60,75 +87,117 @@ const MobileMenu: React.FC = () => {
 
   return (
     <>
-      {/* Mobile Menu Button */}
+      {/* Mobile Menu Button - Touch Friendly (min 44x44px) - Inline in header */}
       <button
-        onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 bg-navy-900 text-white p-2 rounded-lg shadow-lg"
+        onClick={() => setIsOpen(!isOpen)}
+        className="md:hidden bg-navy-900 text-white p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-navy-800 active:scale-95 transition-all duration-200 touch-manipulation flex items-center justify-center"
+        aria-label={isOpen ? "Close menu" : "Open menu"}
+        style={{ WebkitTapHighlightColor: 'transparent' }}
       >
-        <Menu className="w-6 h-6" />
+        {isOpen ? (
+          <X className="w-5 h-5" />
+        ) : (
+          <Menu className="w-5 h-5" />
+        )}
       </button>
 
-      {/* Mobile Menu Overlay */}
-      {isOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsOpen(false)}>
-          <div className="fixed left-0 top-0 h-full w-80 bg-navy-900 text-white shadow-xl transform transition-transform duration-300 ease-in-out">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-navy-700">
-              <button
-                onClick={handleLogoClick}
-                className="flex items-center"
-              >
-                <div className="w-12 h-12 rounded-full bg-accent-400 flex items-center justify-center mr-3 overflow-hidden">
-                  <img src="/img/logo.png" alt="Logo" className="h-12 w-12 object-cover" />
-                </div>
-                <div>
-                  <p className="font-bold text-sm">KOST</p>
-                  <p className="text-xs text-white/70">MANAGER</p>
-                </div>
-              </button>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-2 rounded-md hover:bg-white/10 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+      {/* Mobile Menu Overlay with Backdrop */}
+      <div
+        className={`md:hidden fixed inset-0 z-[55] transition-opacity duration-300 ease-out ${
+          isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+        }`}
+        onClick={() => setIsOpen(false)}
+        style={{ backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+      >
+        <div className="absolute inset-0 bg-black/60" />
+      </div>
+
+      {/* Mobile Menu Sidebar - Slide Animation */}
+      <div
+        className={`md:hidden fixed left-0 top-0 h-full w-[280px] sm:w-[320px] bg-navy-900 text-white shadow-2xl z-[60] transform transition-transform duration-300 ease-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+        style={{ 
+          willChange: 'transform',
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain'
+        }}
+      >
+        {/* Header with Logo Only */}
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-navy-700/50 bg-navy-800/50">
+          <button
+            onClick={handleLogoClick}
+            className="flex items-center justify-center min-h-[44px] min-w-[44px] active:opacity-70 transition-opacity hover:opacity-80"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            <img 
+              src="/img/logo.png" 
+              alt="E-Kost Manager Logo" 
+              className="w-20 h-20 sm:w-22 sm:h-22 object-contain"
+              onError={(e) => {
+                // Fallback jika logo tidak load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.innerHTML = '<span class="text-2xl sm:text-3xl font-bold text-white">🏠</span>';
+                }
+              }}
+            />
+          </button>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="ml-2 p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors flex items-center justify-center touch-manipulation"
+            aria-label="Close menu"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Menu Items - Scrollable */}
+        <nav className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="p-3 space-y-2">
+            {/* Dashboard Button */}
+            <button
+              onClick={handleHomeClick}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg transition-all duration-200 active:scale-[0.98] ${
+                (location.pathname === '/admin' || location.pathname === '/tenant')
+                  ? 'bg-yellow-400 text-navy-900 font-semibold shadow-md'
+                  : 'bg-white text-navy-900/90 hover:bg-yellow-50'
+              }`}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <Home className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm font-medium">Dashboard</span>
+            </button>
 
             {/* Menu Items */}
-            <nav className="flex-1 p-4">
-              <button
-                onClick={handleHomeClick}
-                className="w-full flex items-center justify-center mb-6 p-3 rounded-full bg-accent-400/20 hover:bg-yellow-400/30 transition-all duration-200 group"
-              >
-                <Home className="w-5 h-5 text-yellow-400 mr-3" />
-                <span className="text-white font-medium">Dashboard</span>
-              </button>
+            {items.map((it) => {
+              const isActive = active === it.id;
+              const Icon = it.icon;
 
-              <div className="space-y-2">
-                {items.map((it) => {
-                  const isActive = active === it.id;
-                  const Icon = it.icon;
-
-                  return (
-                    <button
-                      key={it.id}
-                      onClick={() => handleClick(it)}
-                      className={`w-full flex items-center p-4 rounded-lg transition-all duration-200 ${
-                        isActive
-                          ? 'bg-yellow-400 text-navy-900 font-semibold shadow-md'
-                          : 'bg-white text-navy-900/90 hover:bg-yellow-50 hover:text-navy-900 hover:shadow-sm'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 mr-3" />
-                      <span className="text-sm">{it.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </nav>
+              return (
+                <button
+                  key={it.id}
+                  onClick={() => handleClick(it)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg transition-all duration-200 active:scale-[0.98] ${
+                    isActive
+                      ? 'bg-yellow-400 text-navy-900 font-semibold shadow-md'
+                      : 'bg-white text-navy-900/90 hover:bg-yellow-50'
+                  }`}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-sm font-medium">{it.label}</span>
+                </button>
+              );
+            })}
           </div>
-        </div>
-      )}
+        </nav>
+
+      </div>
     </>
   );
 };

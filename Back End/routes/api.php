@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\KamarController;
@@ -16,8 +17,10 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/verify-otp-forgot-password', [AuthController::class, 'verifyOtpForgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::middleware('auth:sanctum')->get('/profile', [AuthController::class, 'profile']);
-    // Allow both PUT and POST methods to update profile (POST is used for multipart/form-data uploads)
     Route::middleware('auth:sanctum')->put('/profile', [AuthController::class, 'updateProfile']);
     Route::middleware('auth:sanctum')->post('/profile', [AuthController::class, 'updateProfile']);
     Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
@@ -55,39 +58,20 @@ Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
     Route::post('/generate-monthly', [PembayaranController::class, 'generateMonthlyInvoices']);
 });
 
-// Invitation routes
+// Invitation routes (PUBLIC)
 Route::post('/invitations/validate', [InvitationController::class, 'validateInvitation']);
 Route::post('/invitations/accept', [InvitationController::class, 'accept']);
 
+// PROTECTED ROUTES
 Route::middleware('auth:sanctum')->group(function () {
+    // Invitation routes
     Route::post('/invitations', [InvitationController::class, 'create']);
     Route::get('/invitations', [InvitationController::class, 'list']);
     Route::delete('/invitations/{id}', [InvitationController::class, 'delete']);
-    // List tenants associated with the authenticated owner via accepted invitations
-    Route::get('/owner/tenants', [InvitationController::class, 'tenants']);
-
-    // Owner rooms management
-    Route::get('/owner/rooms', [KamarController::class, 'ownerRooms']);
-    Route::post('/owner/rooms', [KamarController::class, 'storeForOwner']);
-    Route::put('/owner/rooms/{id}', [KamarController::class, 'updateForOwner']);
-    Route::delete('/owner/rooms/{id}', [KamarController::class, 'destroyForOwner']);
-    Route::put('/owner/rooms/{id}/assign-tenant', [KamarController::class, 'assignTenant']);
-
-    // Owner room types management
-    Route::get('/owner/room-types', [RoomTypeController::class, 'indexForOwner']);
-    Route::post('/owner/room-types', [RoomTypeController::class, 'storeForOwner']);
-    Route::put('/owner/room-types/{id}', [RoomTypeController::class, 'updateForOwner']);
-    Route::delete('/owner/room-types/{id}', [RoomTypeController::class, 'destroyForOwner']);
-
-    // Owner payment settings (owner & tenant views)
-    Route::get('/owner/payment-settings', [OwnerPaymentSettingsController::class, 'show']);
-    Route::put('/owner/payment-settings', [OwnerPaymentSettingsController::class, 'update']);
+    
+    // Tenant routes
     Route::get('/tenant/payment-settings', [OwnerPaymentSettingsController::class, 'tenantShow']);
-
-    // Tenant: get my room & kost info
     Route::get('/tenant/my-room', [KamarController::class, 'tenantRoom']);
-
-    // Tenant complaints
     Route::get('/tenant/complaints', [ComplaintController::class, 'tenantIndex']);
     Route::post('/tenant/complaints', [ComplaintController::class, 'tenantStore']);
     Route::get('/tenant/complaints/{id}/responses', [ComplaintController::class, 'getResponses']);
@@ -95,13 +79,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/tenant/complaints/{id}', [ComplaintController::class, 'tenantUpdate']);
     Route::delete('/tenant/complaints/{id}', [ComplaintController::class, 'tenantDestroy']);
 
-    // Owner complaints
-    Route::get('/owner/complaints', [ComplaintController::class, 'ownerIndex']);
-    Route::get('/owner/complaints/{id}/responses', [ComplaintController::class, 'getResponses']);
-    Route::post('/owner/complaints/{id}/responses', [ComplaintController::class, 'addResponse']);
-    Route::put('/owner/complaints/{id}/status', [ComplaintController::class, 'ownerUpdateStatus']);
-});
-
-Route::get('/test-api', function () {
-    return response()->json(['ok' => true]);
+    // Admin routes (pemilik/pengelola kost)
+    Route::get('/admin/tenants', [InvitationController::class, 'tenants']);
+    Route::get('/admin/rooms', [KamarController::class, 'ownerRooms']);
+    Route::post('/admin/rooms', [KamarController::class, 'storeForOwner']);
+    Route::put('/admin/rooms/{id}', [KamarController::class, 'updateForOwner']);
+    Route::delete('/admin/rooms/{id}', [KamarController::class, 'destroyForOwner']);
+    Route::put('/admin/rooms/{id}/assign-tenant', [KamarController::class, 'assignTenant']);
+    Route::get('/admin/room-types', [RoomTypeController::class, 'indexForOwner']);
+    Route::post('/admin/room-types', [RoomTypeController::class, 'storeForOwner']);
+    Route::put('/admin/room-types/{id}', [RoomTypeController::class, 'updateForOwner']);
+    Route::delete('/admin/room-types/{id}', [RoomTypeController::class, 'destroyForOwner']);
+    Route::get('/admin/payments', [PembayaranController::class, 'ownerPayments']);
+    Route::get('/admin/payment-settings', [OwnerPaymentSettingsController::class, 'show']);
+    Route::put('/admin/payment-settings', [OwnerPaymentSettingsController::class, 'update']);
+    Route::post('/admin/payment-settings', [OwnerPaymentSettingsController::class, 'update']); // For FormData uploads
+    Route::get('/admin/complaints', [ComplaintController::class, 'ownerIndex']);
+    Route::get('/admin/complaints/{id}/responses', [ComplaintController::class, 'getResponses']);
+    Route::post('/admin/complaints/{id}/responses', [ComplaintController::class, 'addResponse']);
+    Route::put('/admin/complaints/{id}/status', [ComplaintController::class, 'ownerUpdateStatus']);
 });

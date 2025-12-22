@@ -23,7 +23,25 @@ class OwnerProfile extends Model
         'bank_account_number',
         'bank_account_holder',
         'qris_payload',
+        'qris_image_path',
     ];
+
+    protected $appends = ['qris_image_url'];
+
+    public function getQrisImageUrlAttribute()
+    {
+        if (!$this->qris_image_path) {
+            return null;
+        }
+        
+        // Jika sudah full URL, return as is
+        if (filter_var($this->qris_image_path, FILTER_VALIDATE_URL)) {
+            return $this->qris_image_path;
+        }
+        
+        // Jika relative path, generate URL
+        return asset('storage/' . $this->qris_image_path);
+    }
 
     public function user()
     {
