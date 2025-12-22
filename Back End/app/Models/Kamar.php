@@ -9,6 +9,8 @@ class Kamar extends Model
 {
     use HasFactory;
 
+    protected $table = 'kamars';
+
     protected $fillable = [
         'kost_id',
         'tenant_id',

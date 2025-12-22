@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OtpMail;
 
 class AuthController extends Controller
 {
@@ -69,10 +71,11 @@ class AuthController extends Controller
             $validated = $validator->validated();
 
             // Create user
+            // Password akan otomatis di-hash oleh model User (cast 'hashed')
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
+                'password' => $validated['password'], // Biarkan model yang hash (cast 'hashed')
                 'role' => $validated['role'],
                 'phone' => $validated['whatsapp'] ?? null,
                 'whatsapp' => $validated['whatsapp'] ?? null,
@@ -93,7 +96,7 @@ class AuthController extends Controller
                     'pilihan_pembayaran' => $validated['pilihanPembayaran'] ?? null,
                 ]);
 
-                // Buat satu record kost agar relasi kost \u2194 kamar \u2194 owner bisa digunakan
+                // Buat satu record kost agar relasi kost <-> kamar <-> owner bisa digunakan
                 Kost::create([
                     'user_id' => $user->id,
                     'nama_kost' => $validated['namaKost'],
@@ -131,36 +134,79 @@ class AuthController extends Controller
     // ===========================
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
+        try {
+            Log::info('📥 Login request:', [
+                'email' => $request->email,
+                'has_password' => $request->has('password'),
+            ]);
 
-        // Cari user berdasarkan email saja; role ditentukan oleh data user di database
-        $user = User::where('email', $request->email)->first();
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+            // Cari user berdasarkan email saja; role ditentukan oleh data user di database
+            $user = User::where('email', $request->email)->first();
+
+            if (! $user) {
+                Log::warning('❌ Login failed: User not found', ['email' => $request->email]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email atau password salah!',
+                ], 401);
+            }
+
+            // Cek password
+            $passwordMatch = Hash::check($request->password, $user->password);
+            
+            Log::info('🔐 Password check:', [
+                'email' => $request->email,
+                'user_id' => $user->id,
+                'password_match' => $passwordMatch,
+            ]);
+
+            if (! $passwordMatch) {
+                Log::warning('❌ Login failed: Password mismatch', [
+                    'email' => $request->email,
+                    'user_id' => $user->id,
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email atau password salah!',
+                ], 401);
+            }
+
+            // buat token Sanctum
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            // Jangan ubah $user->avatar (biarkan sebagai path relatif di database)
+            // avatar_url akan otomatis di-generate oleh getAvatarUrlAttribute() di model User
+            // Tidak perlu set manual karena sudah ada di $appends
+
+            Log::info('✅ Login successful:', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role' => $user->role,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Login berhasil',
+                'user' => $user,
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('💥 Login error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Email atau password salah!',
-            ], 401);
+                'message' => 'Terjadi kesalahan saat login: '.$e->getMessage(),
+            ], 500);
         }
-
-        // buat token Sanctum
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        // Ensure avatar URL is full URL if exists
-        if ($user->avatar) {
-            $user->avatar = asset('storage/'.$user->avatar);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Login berhasil',
-            'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ]);
     }
 
     // ===========================
@@ -173,10 +219,9 @@ class AuthController extends Controller
         // Load relations needed on the frontend (owner profile & kosts)
         $user->loadMissing('ownerProfile', 'kosts');
 
-        // Ensure avatar URL is full URL if exists
-        if ($user->avatar) {
-            $user->avatar = asset('storage/'.$user->avatar);
-        }
+        // Jangan ubah $user->avatar (biarkan sebagai path relatif di database)
+        // avatar_url akan otomatis di-generate oleh getAvatarUrlAttribute() di model User
+        // Tidak perlu set manual karena sudah ada di $appends
 
         return response()->json([
             'success' => true,
@@ -190,15 +235,25 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        $validated = $request->validate([
+        // Validasi untuk field non-file terlebih dahulu
+        $rules = [
             'name' => 'sometimes|string|max:255',
             'username' => 'sometimes|nullable|string|max:255|unique:users,username,'.$user->id,
             'email' => 'sometimes|email|unique:users,email,'.$user->id,
             'whatsapp' => 'sometimes|nullable|string|max:255',
             'address' => 'sometimes|nullable|string',
             'password' => 'sometimes|string|min:6|confirmed',
-            'avatar' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max
-        ]);
+        ];
+
+        // Validasi avatar hanya jika ada file yang diupload
+        if ($request->hasFile('avatar')) {
+            $rules['avatar'] = 'required|image|mimes:jpeg,png,jpg,gif|max:2048'; // 2MB max
+        } else {
+            // Jika tidak ada file, avatar adalah optional
+            $rules['avatar'] = 'sometimes|nullable';
+        }
+
+        $validated = $request->validate($rules);
 
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
@@ -210,19 +265,25 @@ class AuthController extends Controller
             // Store new avatar
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $validated['avatar'] = $avatarPath;
+        } else {
+            // Jika tidak ada file avatar, hapus dari validated agar tidak diupdate
+            unset($validated['avatar']);
         }
 
-        // Hash password if provided
-        if (isset($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        }
+        // Password akan otomatis di-hash oleh model User (cast 'hashed')
+        // Tidak perlu Hash::make() lagi
 
         $user->update($validated);
 
-        // Ensure avatar URL is full URL
-        if ($user->avatar) {
-            $user->avatar = asset('storage/'.$user->avatar);
-        }
+        // Reload user untuk mendapatkan data terbaru
+        $user->refresh();
+
+        // Load relations
+        $user->loadMissing('ownerProfile', 'kosts');
+
+        // Jangan ubah $user->avatar (biarkan sebagai path relatif di database)
+        // avatar_url akan otomatis di-generate oleh getAvatarUrlAttribute() di model User
+        // Tidak perlu set manual karena sudah ada di $appends
 
         return response()->json([
             'success' => true,
@@ -240,5 +301,235 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Logout berhasil',
         ]);
+    }
+
+    // ===========================
+    // FORGOT PASSWORD
+    // ===========================
+    public function forgotPassword(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email|exists:users,email',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email tidak ditemukan',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $user = User::where('email', $request->email)->first();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email tidak ditemukan',
+                ], 404);
+            }
+
+            // Generate OTP untuk user
+            $otp = OtpService::generateOtp($user->id);
+
+            Log::info('🔐 [Forgot Password] OTP ('.$otp.') for user: '.$user->email);
+
+            // Kirim email dengan OTP
+            try {
+                // Cek mail driver - jika log, tetap lanjutkan (untuk development)
+                $mailDriver = config('mail.default');
+                
+                Mail::to($user->email)->send(new OtpMail($otp, 'Kode Verifikasi Reset Password'));
+                
+                Log::info('📧 Email OTP berhasil dikirim ke: '.$user->email);
+
+                $message = 'Kode OTP 6 digit telah dikirim ke email Anda. Silakan cek kotak masuk/spam.';
+                
+                // Jika menggunakan log driver, tambahkan info dan OTP di response (untuk development)
+                if ($mailDriver === 'log') {
+                    $message .= ' (Email ditulis ke log file karena menggunakan log driver)';
+                    // Untuk development, kirim OTP di response juga
+                    if (app()->environment('local') || config('app.debug')) {
+                        return response()->json([
+                            'success' => true,
+                            'message' => $message,
+                            'email' => $user->email,
+                            'otp' => $otp, // Hanya untuk development
+                            'note' => 'OTP ini hanya muncul di development mode',
+                        ]);
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'email' => $user->email,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('❌ Gagal mengirim email OTP ke '.$user->email.': '.$e->getMessage());
+                Log::error('❌ Stack trace: '.$e->getTraceAsString());
+                Log::error('❌ File: '.$e->getFile().' Line: '.$e->getLine());
+
+                // Cek apakah ini error SMTP connection atau sender verification
+                $isSmtpError = str_contains($e->getMessage(), 'Connection') || 
+                              str_contains($e->getMessage(), 'SMTP') ||
+                              str_contains($e->getMessage(), '550') ||
+                              str_contains($e->getMessage(), 'Sender verify') ||
+                              str_contains($e->getMessage(), 'No Such User') ||
+                              str_contains($e->getFile(), 'SmtpTransport');
+
+                // Return error dengan detail untuk debugging
+                $errorMessage = 'Gagal mengirim email OTP. ';
+                
+                if ($isSmtpError) {
+                    $errorMessage .= 'Pastikan konfigurasi email di .env sudah benar. ';
+                    $errorMessage .= 'Pastikan MAIL_USERNAME sama dengan MAIL_FROM_ADDRESS. ';
+                    $errorMessage .= 'Cek file CPANEL_EMAIL_SETUP.md untuk panduan lengkap.';
+                } else {
+                    $errorMessage .= 'Silakan coba lagi atau hubungi dukungan.';
+                }
+                
+                // Di local/development environment, tambahkan detail error
+                $isLocal = app()->environment('local') || config('app.debug');
+                if ($isLocal) {
+                    $errorMessage .= ' Error: '.$e->getMessage();
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                    'error_details' => $isLocal ? [
+                        'message' => $e->getMessage(),
+                        'file' => basename($e->getFile()),
+                        'line' => $e->getLine(),
+                        'smtp_error' => $isSmtpError,
+                    ] : null,
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            Log::error('❌ Error in forgotPassword: '.$e->getMessage());
+            Log::error('❌ Stack trace: '.$e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memproses permintaan',
+                'error_details' => app()->environment('local') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
+    // ===========================
+    // VERIFY OTP FOR FORGOT PASSWORD
+    // ===========================
+    public function verifyOtpForgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'otp' => 'required|string|size:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $user = User::where('email', $request->email)->first();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email tidak ditemukan',
+                ], 404);
+            }
+
+            // Verify OTP menggunakan user_id (karena OTP disimpan dengan user_id)
+            $otpValid = OtpService::verifyOtp($user->id, $request->otp);
+            
+            if (!$otpValid['ok']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OTP tidak valid atau sudah kadaluarsa',
+                ], 422);
+            }
+
+            Log::info('✅ OTP berhasil diverifikasi untuk forgot password: '.$user->email);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'OTP berhasil diverifikasi. Silakan lanjutkan reset password.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error in verifyOtpForgotPassword: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memverifikasi OTP',
+            ], 500);
+        }
+    }
+
+    // ===========================
+    // RESET PASSWORD
+    // ===========================
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'otp' => 'required|string|size:6',
+            'password' => 'required|string|min:6',
+            'password_confirmation' => 'required|same:password',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $user = User::where('email', $request->email)->first();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email tidak ditemukan',
+                ], 404);
+            }
+
+            // Verify OTP
+            $otpValid = OtpService::verifyOtp($user->id, $request->otp);
+            
+            if (!$otpValid['ok']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OTP tidak valid atau sudah kadaluarsa',
+                ], 422);
+            }
+
+            // Update password (akan di-hash otomatis oleh mutator di model User)
+            $user->password = $request->password;
+            $user->save();
+
+            Log::info('✅ Password berhasil direset untuk user: '.$user->email);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password berhasil direset. Silakan login dengan password baru.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error in resetPassword: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mereset password',
+            ], 500);
+        }
     }
 }

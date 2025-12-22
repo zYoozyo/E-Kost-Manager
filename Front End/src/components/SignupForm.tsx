@@ -11,6 +11,7 @@ import {
   District,
   Village
 } from '../services/regionService';
+import { provincesFallback } from '../utils/provincesData';
 
 interface SignupFormProps {
   onSwitchToLogin: () => void;
@@ -55,7 +56,6 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
         if (data.length === 0) {
           toast.error('Data provinsi kosong. Menggunakan data fallback...');
           // Try to use fallback
-          const { provincesFallback } = await import('../utils/provincesData');
           setProvinces(provincesFallback.map(p => ({ id: p.id, name: p.name })));
         } else {
           console.log('✅ Successfully loaded', data.length, 'provinces');
@@ -65,16 +65,10 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
         console.error('Error loading provinces:', error);
         console.warn('⚠️ Using fallback data for provinces');
         // Use fallback data if API fails
-        try {
-          const { provincesFallback } = await import('../utils/provincesData');
-          const fallbackData = provincesFallback.map(p => ({ id: p.id, name: p.name }));
-          setProvinces(fallbackData);
-          toast(`Menggunakan data provinsi offline (${fallbackData.length} provinsi)`, { icon: '⚠️' });
-          console.log('✅ Loaded fallback provinces:', fallbackData.length);
-        } catch (fallbackError) {
-          console.error('Failed to load fallback data:', fallbackError);
-          toast.error('Gagal memuat data provinsi. Silakan refresh halaman.');
-        }
+        const fallbackData = provincesFallback.map(p => ({ id: p.id, name: p.name }));
+        setProvinces(fallbackData);
+        toast(`Menggunakan data provinsi offline (${fallbackData.length} provinsi)`, { icon: '⚠️' });
+        console.log('✅ Loaded fallback provinces:', fallbackData.length);
       } finally {
         setLoadingProvinces(false);
       }
@@ -799,9 +793,6 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
                           {watch('otp')}
                         </p>
                       </div>
-                      <p className="text-xs text-blue-700 mt-2 text-center">
-                        💡 Mode pengembangan: OTP ditampilkan untuk testing
-                      </p>
                     </div>
                   )}
                 </p>

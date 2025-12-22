@@ -7,7 +7,7 @@ let ownerRoomTypesCache: OwnerRoomType[] | null = null;
 let ownerRoomTypesCacheTimestamp: number | null = null;
 const CACHE_TTL_MS = 180_000; // 3 minutes
 
-// Tipe untuk kamar milik owner yang dikembalikan backend /owner/rooms
+// Tipe untuk kamar milik admin yang dikembalikan backend /admin/rooms
 export interface OwnerRoom {
   id: number;
   kost_id: number;
@@ -72,7 +72,26 @@ export const roomService = {
       return ownerRoomsCache;
     }
 
-    const response = await api.get<{ success: boolean; data: OwnerRoom[] }>('/owner/rooms');
+    const response = await api.get<{ success: boolean; data: OwnerRoom[] }>('/admin/rooms');
+    const data = response.data.data || [];
+    ownerRoomsCache = data;
+    ownerRoomsCacheTimestamp = now;
+    return data;
+  },
+
+  async getAdminRooms(force = false): Promise<OwnerRoom[]> {
+    const now = Date.now();
+
+    if (
+      !force &&
+      ownerRoomsCache &&
+      ownerRoomsCacheTimestamp &&
+      now - ownerRoomsCacheTimestamp < CACHE_TTL_MS
+    ) {
+      return ownerRoomsCache;
+    }
+
+    const response = await api.get<{ success: boolean; data: OwnerRoom[] }>('/admin/rooms');
     const data = response.data.data || [];
     ownerRoomsCache = data;
     ownerRoomsCacheTimestamp = now;
@@ -91,7 +110,26 @@ export const roomService = {
       return ownerRoomTypesCache;
     }
 
-    const response = await api.get<{ success: boolean; data: OwnerRoomType[] }>('/owner/room-types');
+    const response = await api.get<{ success: boolean; data: OwnerRoomType[] }>('/admin/room-types');
+    const data = response.data.data || [];
+    ownerRoomTypesCache = data;
+    ownerRoomTypesCacheTimestamp = now;
+    return data;
+  },
+
+  async getAdminRoomTypes(force = false): Promise<OwnerRoomType[]> {
+    const now = Date.now();
+
+    if (
+      !force &&
+      ownerRoomTypesCache &&
+      ownerRoomTypesCacheTimestamp &&
+      now - ownerRoomTypesCacheTimestamp < CACHE_TTL_MS
+    ) {
+      return ownerRoomTypesCache;
+    }
+
+    const response = await api.get<{ success: boolean; data: OwnerRoomType[] }>('/admin/room-types');
     const data = response.data.data || [];
     ownerRoomTypesCache = data;
     ownerRoomTypesCacheTimestamp = now;
@@ -104,7 +142,7 @@ export const roomService = {
     facilities?: string;
     description?: string;
   }): Promise<OwnerRoomType> {
-    const response = await api.post<{ success: boolean; data: OwnerRoomType }>('/owner/room-types', payload);
+    const response = await api.post<{ success: boolean; data: OwnerRoomType }>('/admin/room-types', payload);
     // Invalidate cache so next fetch gets fresh data
     ownerRoomTypesCache = null;
     ownerRoomTypesCacheTimestamp = null;
@@ -117,14 +155,14 @@ export const roomService = {
     facilities?: string;
     description?: string;
   }): Promise<OwnerRoomType> {
-    const response = await api.put<{ success: boolean; data: OwnerRoomType }>(`/owner/room-types/${id}`, payload);
+    const response = await api.put<{ success: boolean; data: OwnerRoomType }>(`/admin/room-types/${id}`, payload);
     ownerRoomTypesCache = null;
     ownerRoomTypesCacheTimestamp = null;
     return response.data.data;
   },
 
   async deleteOwnerRoomType(id: number): Promise<void> {
-    await api.delete(`/owner/room-types/${id}`);
+    await api.delete(`/admin/room-types/${id}`);
     ownerRoomTypesCache = null;
     ownerRoomTypesCacheTimestamp = null;
   },
@@ -136,7 +174,7 @@ export const roomService = {
     status?: 'tersedia' | 'terisi';
     kost_id?: number;
   }): Promise<OwnerRoom> {
-    const response = await api.post<{ success: boolean; data: OwnerRoom }>('/owner/rooms', payload);
+    const response = await api.post<{ success: boolean; data: OwnerRoom }>('/admin/rooms', payload);
     ownerRoomsCache = null;
     ownerRoomsCacheTimestamp = null;
     return response.data.data;
@@ -148,14 +186,14 @@ export const roomService = {
     harga_sewa?: number;
     status?: 'tersedia' | 'terisi';
   }): Promise<OwnerRoom> {
-    const response = await api.put<{ success: boolean; data: OwnerRoom }>(`/owner/rooms/${id}`, payload);
+    const response = await api.put<{ success: boolean; data: OwnerRoom }>(`/admin/rooms/${id}`, payload);
     ownerRoomsCache = null;
     ownerRoomsCacheTimestamp = null;
     return response.data.data;
   },
 
   async deleteOwnerRoom(id: number): Promise<void> {
-    await api.delete(`/owner/rooms/${id}`);
+    await api.delete(`/admin/rooms/${id}`);
     ownerRoomsCache = null;
     ownerRoomsCacheTimestamp = null;
   },
@@ -167,7 +205,7 @@ export const roomService = {
     catatan_sewa?: string;
   }): Promise<OwnerRoom> {
     const response = await api.put<{ success: boolean; data: OwnerRoom }>(
-      `/owner/rooms/${roomId}/assign-tenant`,
+      `/admin/rooms/${roomId}/assign-tenant`,
       payload
     );
     ownerRoomsCache = null;

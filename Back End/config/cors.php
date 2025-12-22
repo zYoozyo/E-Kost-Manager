@@ -30,8 +30,13 @@ return [
     |
     */
     'allowed_origins' => [
-        'http://192.168.153.1:3000',
+        'https://ekostmanager.com',
+        'https://www.ekostmanager.com',
+        // Development origins (untuk local development)
         'http://localhost:3000',
+        'http://localhost:5173',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5173',
     ],
 
     /*

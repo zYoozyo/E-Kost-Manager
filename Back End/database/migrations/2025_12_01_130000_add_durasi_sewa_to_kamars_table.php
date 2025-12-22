@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('kamars', function (Blueprint $table) {
-            $table->integer('durasi_sewa')->default(1)->after('tanggal_mulai_sewa')->comment('Durasi sewa dalam bulan');
-            $table->date('tanggal_akhir_sewa')->nullable()->after('durasi_sewa')->comment('Tanggal akhir sewa (auto calculate)');
+            $table->integer('durasi_sewa')->default(1)->comment('Durasi sewa dalam bulan');
+            $table->date('tanggal_akhir_sewa')->nullable()->comment('Tanggal akhir sewa (auto calculate)');
         });
     }
 

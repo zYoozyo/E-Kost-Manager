@@ -12,9 +12,15 @@ export interface OwnerComplaint {
   date: string;
 }
 
-type ComplaintRole = 'tenant' | 'owner';
+type ComplaintRole = 'tenant' | 'admin';
 
-const getRolePrefix = (role: ComplaintRole) => (role === 'tenant' ? '/tenant' : '/owner');
+const getRolePrefix = (role: ComplaintRole) => {
+  switch (role) {
+    case 'tenant': return '/tenant';
+    case 'admin': return '/admin';
+    default: return '/admin';
+  }
+};
 
 export const complaintService = {
   async getTenantComplaints(): Promise<Complaint[]> {
@@ -48,7 +54,7 @@ export const complaintService = {
   },
 
   async getOwnerComplaints(): Promise<OwnerComplaint[]> {
-    const response = await api.get<{ success: boolean; data: any[] }>('/owner/complaints');
+    const response = await api.get<{ success: boolean; data: any[] }>('/admin/complaints');
     const data = response.data.data || [];
 
     return data.map((c: any) => ({
@@ -71,7 +77,7 @@ export const complaintService = {
     }
   ): Promise<OwnerComplaint> {
     const response = await api.put<{ success: boolean; data: any }>(
-      `/owner/complaints/${id}/status`,
+      `/admin/complaints/${id}/status`,
       payload
     );
     const c = response.data.data;
@@ -107,5 +113,59 @@ export const complaintService = {
       payload
     );
     return response.data.data;
+  },
+
+  // Admin methods
+  async getAdminComplaints(): Promise<OwnerComplaint[]> {
+    try {
+      // Try admin endpoint first
+      const response = await api.get<{ success: boolean; data: any[] }>('/admin/complaints');
+      const data = response.data.data || [];
+
+      return data.map((c: any) => ({
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        status: c.status,
+        priority: c.priority,
+        date: c.created_at ? c.created_at.substring(0, 10) : '',
+        tenantName: c.tenant?.name || '',
+        tenantEmail: c.tenant?.email || '',
+      }));
+    } catch (error: any) {
+      // If admin endpoint fails (404 or 403), fallback to regular complaints endpoint
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        console.log('Admin complaints endpoint not available, falling back to regular complaints endpoint');
+        // Try /complaints endpoint instead
+        throw error;
+      }
+      // Re-throw other errors
+      throw error;
+    }
+  },
+
+  async updateAdminComplaintStatus(
+    id: number,
+    payload: {
+      status: 'pending' | 'in_progress' | 'resolved';
+      priority?: 'low' | 'medium' | 'high';
+    }
+  ): Promise<OwnerComplaint> {
+    const response = await api.put<{ success: boolean; data: any }>(
+      `/admin/complaints/${id}/status`,
+      payload
+    );
+    const c = response.data.data;
+
+    return {
+      id: c.id,
+      title: c.title,
+      description: c.description,
+      status: c.status,
+      priority: c.priority,
+      date: c.created_at ? c.created_at.substring(0, 10) : '',
+      tenantName: c.tenant?.name || '',
+      tenantEmail: c.tenant?.email || '',
+    };
   },
 };

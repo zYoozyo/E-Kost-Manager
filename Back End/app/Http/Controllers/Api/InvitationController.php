@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\InvitationMail;
 use App\Models\Invitation;
 use App\Models\Kamar;
+use App\Models\Kost;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -198,10 +199,11 @@ class InvitationController extends Controller
             DB::beginTransaction();
 
             // Buat akun tenant
+            // Password akan otomatis di-hash oleh model User (cast 'hashed')
             $tenant = User::create([
                 'name' => $invitation->name ?? 'Penyewa',
                 'email' => $invitation->email,
-                'password' => Hash::make($request->password),
+                'password' => $request->password, // Biarkan model yang hash (cast 'hashed')
                 'role' => 'tenant',
             ]);
 
@@ -257,117 +259,91 @@ class InvitationController extends Controller
 
     /**
      * List tenant users associated with the authenticated owner
-     * based on accepted invitations (is_used = true).
+     * based on accepted invitations (is_used = true) and rooms assigned to tenants.
      */
     public function tenants(Request $request)
     {
         $owner = $request->user();
 
-        // Debug: Log all invitations for this owner
-        $allInvitations = Invitation::where('owner_id', $owner->id)->get();
-        Log::info('Debug - All invitations for owner '.$owner->id.':', [
-            'total_invitations' => $allInvitations->count(),
-            'invitations' => $allInvitations->map(function ($inv) {
-                return [
-                    'id' => $inv->id,
-                    'email' => $inv->email,
-                    'name' => $inv->name,
-                    'is_used' => $inv->is_used,
-                    'expires_at' => $inv->expires_at,
-                    'created_at' => $inv->created_at,
+        try {
+            // Get all accepted invitations (is_used = true) for this owner
+            $acceptedInvitations = Invitation::where('owner_id', $owner->id)
+                ->where('is_used', true)
+                ->pluck('email')
+                ->toArray();
+
+            // Get all tenants from invitations
+            $tenantsFromInvitations = User::where('role', 'tenant')
+                ->whereIn('email', $acceptedInvitations)
+                ->get();
+
+            // Get all tenants from rooms (kamar yang sudah di-assign ke tenant)
+            $ownerKosts = Kost::where('user_id', $owner->id)->pluck('id');
+            $roomsWithTenants = Kamar::whereIn('kost_id', $ownerKosts)
+                ->whereNotNull('tenant_id')
+                ->with('tenant:id,name,email,phone,whatsapp')
+                ->get();
+
+            // Combine tenants from both sources
+            $tenantMap = [];
+            
+            // Add tenants from invitations
+            foreach ($tenantsFromInvitations as $tenant) {
+                $tenantMap[$tenant->id] = [
+                    'id' => $tenant->id,
+                    'name' => $tenant->name,
+                    'email' => $tenant->email,
+                    'phone' => $tenant->phone,
+                    'whatsapp' => $tenant->whatsapp,
+                    'room' => null,
+                    'status' => 'Tidak Aktif',
                 ];
-            })
-        ]);
+            }
 
-        // Ambil semua email yang sudah menerima undangan dari owner ini
-        $emails = Invitation::where('owner_id', $owner->id)
-            ->where('is_used', true)
-            ->pluck('email')
-            ->unique()
-            ->values();
+            // Add/update tenants from rooms (prioritize room info)
+            foreach ($roomsWithTenants as $room) {
+                if ($room->tenant) {
+                    $tenantId = $room->tenant->id;
+                    $roomInfo = "Kamar {$room->nomor_kamar}";
+                    
+                    if (isset($tenantMap[$tenantId])) {
+                        // Update existing tenant with room info
+                        $tenantMap[$tenantId]['room'] = $roomInfo;
+                        $tenantMap[$tenantId]['status'] = $room->status === 'terisi' ? 'Aktif' : 'Tidak Aktif';
+                    } else {
+                        // Add new tenant from room
+                        $tenantMap[$tenantId] = [
+                            'id' => $room->tenant->id,
+                            'name' => $room->tenant->name,
+                            'email' => $room->tenant->email,
+                            'phone' => $room->tenant->phone,
+                            'whatsapp' => $room->tenant->whatsapp,
+                            'room' => $roomInfo,
+                            'status' => $room->status === 'terisi' ? 'Aktif' : 'Tidak Aktif',
+                        ];
+                    }
+                }
+            }
 
-        Log::info('Debug - Used invitation emails:', [
-            'emails_count' => $emails->count(),
-            'emails' => $emails->toArray()
-        ]);
+            // Convert map to array
+            $tenants = array_values($tenantMap);
 
-        if ($emails->isEmpty()) {
             return response()->json([
                 'success' => true,
+                'data' => $tenants,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Failed to fetch tenants:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat daftar penyewa: ' . $e->getMessage(),
                 'data' => [],
-                'debug' => [
-                    'message' => 'No used invitations found',
-                    'total_invitations' => $allInvitations->count(),
-                ]
-            ]);
+            ], 500);
         }
-
-        // Ambil user dengan role tenant yang email-nya ada di daftar tersebut
-        $tenants = User::where('role', 'tenant')
-            ->whereIn('email', $emails)
-            ->get([
-                'id',
-                'name',
-                'email',
-                'phone',
-                'whatsapp',
-                'created_at',
-                'updated_at',
-            ]);
-
-        Log::info('Debug - Found tenants:', [
-            'tenants_count' => $tenants->count(),
-            'tenants' => $tenants->toArray()
-        ]);
-
-        // Ambil semua kost milik owner ini
-        $ownerKostIds = $owner->kosts()->pluck('id');
-
-        // Ambil kamar yang dimiliki owner ini dan sedang ditempati tenant
-        $rooms = Kamar::whereIn('kost_id', $ownerKostIds)
-            ->whereIn('tenant_id', $tenants->pluck('id'))
-            ->get();
-
-        $roomsByTenant = $rooms->groupBy('tenant_id')->map(function ($items) {
-            $roomNumbers = $items->pluck('nomor_kamar')->implode(', ');
-
-            // Tenant dianggap "Aktif" selama ia memiliki setidaknya satu kamar di kost ini
-            $hasRoom = $items->isNotEmpty();
-
-            return [
-                'room' => $roomNumbers,
-                'status' => $hasRoom ? 'Aktif' : 'Tidak Aktif',
-            ];
-        });
-
-        $data = $tenants->map(function ($tenant) use ($roomsByTenant) {
-            $roomInfo = $roomsByTenant->get($tenant->id, null);
-
-            return [
-                'id' => $tenant->id,
-                'name' => $tenant->name,
-                'email' => $tenant->email,
-                'phone' => $tenant->phone,
-                'whatsapp' => $tenant->whatsapp,
-                'room' => $roomInfo['room'] ?? null,
-                // Jika tenant belum punya kamar sama sekali, anggap status "Tidak Aktif"
-                'status' => $roomInfo['status'] ?? 'Tidak Aktif',
-                'created_at' => $tenant->created_at,
-                'updated_at' => $tenant->updated_at,
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-            'debug' => [
-                'total_invitations' => $allInvitations->count(),
-                'used_invitations' => $emails->count(),
-                'found_tenants' => $tenants->count(),
-                'owner_kost_ids' => $ownerKostIds->toArray(),
-                'assigned_rooms' => $rooms->count(),
-            ]
-        ]);
     }
 
     /**

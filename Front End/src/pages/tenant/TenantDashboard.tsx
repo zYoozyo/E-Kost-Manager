@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Home, Users, CreditCard, AlertTriangle, Plus, Search, Filter, Eye, User, CheckCircle, Clock, XCircle, ArrowRight, ChevronRight, Calendar, FileText, TrendingUp, TrendingDown, DollarSign, Bell, Menu, X, MessageSquare, ChevronDown } from 'lucide-react';
+import { Building2, Home, Users, CreditCard, AlertTriangle, Plus, Search, Filter, Eye, User, CheckCircle, Clock, XCircle, ArrowRight, ChevronRight, Calendar, FileText, TrendingUp, TrendingDown, DollarSign, MessageSquare } from 'lucide-react';
 import { roomService, TenantRoomResponse } from '../../services/roomService';
 import { paymentService, PaymentHistoryItem } from '../../services/paymentService';
 import { complaintService } from '../../services/complaintService';
@@ -12,9 +12,6 @@ import { useNotifications } from '../../hooks/useNotifications';
 export const TenantDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { unreadCount, notifications } = useNotifications();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const [tenantRoom, setTenantRoom] = useState<TenantRoomResponse | null>(null);
   const [payments, setPayments] = useState<PaymentHistoryItem[]>([]);
@@ -51,7 +48,7 @@ export const TenantDashboard: React.FC = () => {
     };
 
     loadData();
-  }, []);
+  }, []); // User avatar will update automatically via React re-render when user object changes
 
   const kostName = tenantRoom?.kost?.nama_kost || 'Kost Anda';
   const kostAddress = tenantRoom?.kost?.alamat_kost || 'Alamat kost belum diisi';
@@ -137,30 +134,6 @@ export const TenantDashboard: React.FC = () => {
                   <p className="text-xs text-gray-600">Selamat datang, {user?.name}</p>
                 </div>
               </button>
-              
-              <div className="flex items-center gap-2">
-                {/* Mobile Notifications */}
-                <div className="relative">
-                  <button 
-                    onClick={() => navigate('/tenant/notifications')}
-                    className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <Bell className="w-5 h-5 text-gray-600" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-                {/* Mobile Menu Button */}
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <Menu className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
             </div>
 
             {/* Desktop Header */}
@@ -178,193 +151,100 @@ export const TenantDashboard: React.FC = () => {
                   <p className="text-sm text-gray-600">Selamat datang kembali, {user?.name}</p>
                 </div>
               </button>
-              
-              {/* Profile Section */}
-              <div className="flex items-center gap-3">
-                {/* Notification Button */}
-                <div className="relative">
-                  <button 
-                    onClick={() => navigate('/tenant/notifications')}
-                    className="relative p-2 rounded-full hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
-                  >
-                    <Bell className="w-5 h-5" />
-                    {unreadCount > 0 && (
-                      <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
+            </div>
+
+
+            {/* Analytics Cards - Same style as Admin Dashboard */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 md:mb-8">
+              {/* Total Tagihan Dibayar Card */}
+              <div className="bg-green-50 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 flex items-center shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-2 sm:p-2.5 md:p-3 bg-green-500 rounded-lg flex-shrink-0">
+                  <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
                 </div>
-
-                {/* Profile Dropdown */}
-                <div className="relative">
-                  <button 
-                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <User className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">
-                      {user?.name || 'Profil'}
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  {isProfileOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                      <button
-                        onClick={() => {
-                          navigate('/tenant/profile');
-                          setIsProfileOpen(false);
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Profil Saya
-                      </button>
-                      <button
-                        onClick={() => {
-                          logout();
-                          setIsProfileOpen(false);
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                      >
-                        Keluar
-                      </button>
-                    </div>
-                  )}
+                <div className="ml-2 sm:ml-3 md:ml-4 min-w-0">
+                  <p className="text-xs sm:text-xs md:text-sm text-gray-600 truncate">Total Tagihan Dibayar</p>
+                  <p className="text-xs sm:text-sm md:text-lg lg:text-2xl font-bold text-gray-900 truncate">
+                    Rp {totalPaid.toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Tagihan Menunggu Pembayaran Card */}
+              <div className="bg-yellow-50 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 flex items-center shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-2 sm:p-2.5 md:p-3 bg-yellow-500 rounded-lg flex-shrink-0">
+                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                </div>
+                <div className="ml-2 sm:ml-3 md:ml-4 min-w-0">
+                  <p className="text-xs sm:text-xs md:text-sm text-gray-600 truncate">Tagihan Menunggu</p>
+                  <p className="text-xs sm:text-sm md:text-lg lg:text-2xl font-bold text-gray-900 truncate">
+                    Rp {totalPending.toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Total Pembayaran Lunas Card */}
+              <div className="bg-blue-50 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 flex items-center shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-2 sm:p-2.5 md:p-3 bg-blue-500 rounded-lg flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                </div>
+                <div className="ml-2 sm:ml-3 md:ml-4 min-w-0">
+                  <p className="text-xs sm:text-xs md:text-sm text-gray-600 truncate">Total Pembayaran Lunas</p>
+                  <p className="text-base sm:text-lg md:text-2xl font-bold text-gray-900">{payments.filter(p => p.status === 'paid').length}</p>
+                </div>
+              </div>
+              
+              {/* Aduan Saya Card */}
+              <div className="bg-purple-50 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 flex items-center shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-2 sm:p-2.5 md:p-3 bg-purple-500 rounded-lg flex-shrink-0">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                </div>
+                <div className="ml-2 sm:ml-3 md:ml-4 min-w-0">
+                  <p className="text-xs sm:text-xs md:text-sm text-gray-600 truncate">Aduan Saya</p>
+                  <p className="text-base sm:text-lg md:text-2xl font-bold text-gray-900">{complaints.length}</p>
                 </div>
               </div>
             </div>
 
-            {/* Mobile Menu Overlay */}
-            {isMobileMenuOpen && (
-              <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50">
-                <div className="fixed right-0 top-0 h-full w-64 bg-white shadow-xl">
-                  <div className="p-4 border-b">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-semibold text-gray-900">Menu</h3>
-                      <button
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="p-2 rounded-lg hover:bg-gray-100"
-                      >
-                        <X className="w-5 h-5 text-gray-600" />
-                      </button>
-                    </div>
-                  </div>
-                  <nav className="p-4 space-y-2">
-                    <button
-                      onClick={() => {
-                        navigate('/tenant/payments');
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 flex items-center gap-3"
-                    >
-                      <CreditCard className="w-5 h-5 text-gray-600" />
-                      <span>Pembayaran</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigate('/tenant/complaints');
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 flex items-center gap-3"
-                    >
-                      <FileText className="w-5 h-5 text-gray-600" />
-                      <span>Aduan</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigate('/tenant/profile');
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 flex items-center gap-3"
-                    >
-                      <User className="w-5 h-5 text-gray-600" />
-                      <span>Profil</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        logout();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 flex items-center gap-3 text-red-600"
-                    >
-                      <XCircle className="w-5 h-5" />
-                      <span>Keluar</span>
-                    </button>
-                  </nav>
-                </div>
-              </div>
-            )}
-
-            {/* Analytics Cards - Responsive Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-green-600" />
-                  <span className="text-xs md:text-sm text-green-600 font-semibold">+12%</span>
-                </div>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">Rp {totalPaid.toLocaleString('id-ID')}</p>
-                <p className="text-xs md:text-sm text-gray-600">Total Dibayar</p>
-              </div>
-              
-              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <CreditCard className="w-6 h-6 md:w-8 md:h-8 text-yellow-600" />
-                  <span className="text-xs md:text-sm text-yellow-600 font-semibold">Pending</span>
-                </div>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">Rp {totalPending.toLocaleString('id-ID')}</p>
-                <p className="text-xs md:text-sm text-gray-600">Menunggu Pembayaran</p>
-              </div>
-              
-              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
-                  <span className="text-xs md:text-sm text-blue-600 font-semibold">{paymentTrend.toFixed(0)}%</span>
-                </div>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">{payments.filter(p => p.status === 'paid').length}</p>
-                <p className="text-xs md:text-sm text-gray-600">Pembayaran Sukses</p>
-              </div>
-              
-              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <FileText className="w-6 h-6 md:w-8 md:h-8 text-purple-600" />
-                  <span className="text-xs md:text-sm text-purple-600 font-semibold">Active</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Welcome & Room Cards - Responsive */}
+            {/* Welcome & Room Cards - Optimized */}
             <div className="grid md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-              {/* Welcome Card */}
-              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-                <div className="flex items-center mb-4">
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-200 flex items-center justify-center mr-3 md:mr-4">
-                    <User className="w-8 h-8 md:w-12 md:h-12 text-gray-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg md:text-2xl font-bold text-gray-900">Selamat Datang</h2>
-                    <p className="text-sm md:text-lg font-semibold text-gray-900">{user?.name}</p>
-                  </div>
+              {/* Welcome Card - Simplified without Avatar */}
+              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 hover:shadow-md transition-shadow">
+                <div className="mb-4">
+                  <h2 className="text-lg md:text-2xl font-bold text-gray-900 mb-1">Selamat Datang</h2>
+                  <p className="text-sm md:text-lg font-semibold text-gray-900">{user?.name || 'Penyewa'}</p>
                 </div>
-                <p className="text-xs md:text-sm text-gray-600">
+                <p className="text-xs md:text-sm text-gray-600 line-clamp-3 mb-4">
                   {tenantRoom ? `Terima kasih sudah menjadi bagian dari ${tenantRoom.kost?.nama_kost || 'Kost'}` : 'Menunggu konfirmasi kamar dari pemilik'}
                 </p>
+                <button
+                  onClick={() => navigate('/tenant/profile')}
+                  className="text-xs md:text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 transition-colors"
+                >
+                  <User className="w-3 h-3 md:w-4 md:h-4" />
+                  Kelola Profil
+                </button>
               </div>
 
-              {/* Room Card - Full Width on Mobile */}
-              <div className="md:col-span-2 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-xl shadow-lg p-4 md:p-6">
-                <div className="mb-4">
-                  <h3 className="text-base md:text-lg font-semibold text-navy-900 mb-1">{kostName}</h3>
-                  <p className="text-2xl md:text-4xl font-bold text-navy-900">{roomNumber}</p>
-                </div>
-                <div className="flex items-center justify-between mt-4 md:mt-6">
-                  <div>
-                    <p className="text-xs md:text-sm font-medium text-navy-900">Harga: Rp {monthlyPrice.toLocaleString('id-ID')}/bulan</p>
+              {/* Room Card - Optimized */}
+              <div className="md:col-span-2 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-xl shadow-lg hover:shadow-xl transition-shadow p-4 md:p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base md:text-lg font-semibold text-navy-900 mb-1 truncate">{kostName}</h3>
+                    <p className="text-2xl md:text-4xl font-bold text-navy-900">{roomNumber}</p>
                   </div>
-                  <Home className="w-6 h-6 md:w-8 md:h-8 text-navy-900" />
+                  <Home className="w-6 h-6 md:w-8 md:h-8 text-navy-900 flex-shrink-0" />
+                </div>
+                <div className="flex items-center justify-between mt-4 md:mt-6 pt-4 border-t border-navy-900/20">
+                  <div className="flex-1">
+                    <p className="text-xs md:text-sm font-medium text-navy-900">Harga Sewa Bulanan</p>
+                    <p className="text-base md:text-xl font-bold text-navy-900">Rp {monthlyPrice.toLocaleString('id-ID')}/bulan</p>
+                  </div>
+                  {tenantRoom?.room?.tipe_kamar && (
+                    <div className="text-right">
+                      <p className="text-xs md:text-sm font-medium text-navy-900">Tipe Kamar</p>
+                      <p className="text-sm md:text-base font-semibold text-navy-900">{tenantRoom.room.tipe_kamar}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -404,6 +284,7 @@ export const TenantDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+
 
 {/* Dashboard Content */}
             <div className="space-y-8">

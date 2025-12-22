@@ -5,7 +5,7 @@ import { ComplaintResponse } from '../types';
 
 interface ComplaintResponseFormProps {
   complaintId: number;
-  role: 'tenant' | 'owner';
+  role: 'tenant' | 'admin';
   onResponseAdded: (response: ComplaintResponse) => void;
   disabled?: boolean;
   placeholder?: string;

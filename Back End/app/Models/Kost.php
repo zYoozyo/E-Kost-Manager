@@ -10,7 +10,7 @@ class Kost extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'user_id',  
         'nama_kost',
         'alamat_kost',
         'jumlah_kamar',
@@ -22,7 +22,7 @@ class Kost extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function rooms()
+    public function kamars()
     {
         return $this->hasMany(Kamar::class);
     }

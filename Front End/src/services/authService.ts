@@ -1,29 +1,45 @@
 import { api } from './api';
-import axios from 'axios';
 import { User, LoginFormData, SignupFormData, LoginResponse, VerifyOtpResponse, OtpRequestResponse } from '../types';
 
-export const getCsrfCookie = async () => {
-  return await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
-    withCredentials: true,
-  });
-};
-
 export const authService = {
-
   async login(email: string, password: string): Promise<LoginResponse> {
-  // Ambil CSRF cookie
-  await getCsrfCookie();
-
-    // 2️⃣ Login tanpa mengirim role; role ditentukan oleh data user di server
-    const response = await api.post('/auth/login', { email, password });
-    const data = response.data as { user: User; access_token: string; token_type: string };
-
-    // 3️⃣ Simpan token di localStorage
-    localStorage.setItem('token', data.access_token);
-
-    return { token: data.access_token, user: data.user } as LoginResponse;
+    try {
+      console.log('authService.login: Sending request to /auth/login');
+      const response = await api.post('/auth/login', { email, password });
+      console.log('authService.login: Response received:', response.data);
+      
+      // Handle both response structures
+      const data = response.data as {
+        access_token?: string;
+        token?: string;
+        user?: User;
+        data?: { user?: User };
+      };
+      const token = data.access_token || data.token;
+      const user = data.user || data.data?.user;
+      
+      if (!token) {
+        console.error('authService.login: No token in response:', data);
+        throw new Error('Token tidak ditemukan dalam response');
+      }
+      
+      if (!user) {
+        console.error('authService.login: No user in response:', data);
+        throw new Error('Data user tidak ditemukan dalam response');
+      }
+      
+      console.log('authService.login: Token found:', token.substring(0, 20) + '...');
+      console.log('authService.login: User found:', user);
+      
+      sessionStorage.setItem('token', token);
+      return { token, user } as LoginResponse;
+    } catch (error: any) {
+      console.error('authService.login: Error:', error);
+      console.error('authService.login: Error response:', error.response?.data);
+      throw error;
+    }
   },
-
+ 
   async signup(data: SignupFormData) {
     const payload = {
       name: data.namaPemilik || data.name || '',
@@ -41,9 +57,6 @@ export const authService = {
       kecamatan: data.kecamatan,
       kelurahan: data.kelurahan,
     };
-
-    console.log('📤 Sending signup payload:', payload);
-    console.log('🔑 OTP value:', payload.otp);
     
     const response = await api.post('/auth/register', payload);
     return response.data;
@@ -55,7 +68,8 @@ export const authService = {
   },
 
   async verifyOTP(email: string, otp: string): Promise<VerifyOtpResponse> {
-    const response = await api.post('/otp/verify', { email, otp });
+    // Untuk forgot password, gunakan endpoint khusus
+    const response = await api.post('/auth/verify-otp-forgot-password', { email, otp });
     const data = response.data as { message: string; success?: boolean };
     return { success: data.success ?? true, message: data.message } as VerifyOtpResponse;
   },
@@ -67,22 +81,33 @@ export const authService = {
 
   async updateProfile(data: FormData | Record<string, any>): Promise<User> {
     let response;
-
     if (data instanceof FormData) {
-      // For file uploads, use POST with method override so PHP/Laravel parses files correctly
-      if (!data.has('_method')) {
-        data.append('_method', 'PUT');
-      }
+      if (!data.has('_method')) data.append('_method', 'PUT');
       response = await api.post<{ data: User }>('/auth/profile', data);
+      console.log('API Response for FormData:', response.data);
     } else {
-      // For normal profile updates (JSON body), use PUT as usual
       response = await api.put<{ data: User }>('/auth/profile', data);
+      console.log('API Response for JSON:', response.data);
     }
-
     return response.data.data as User;
   },
 
   async logout() {
     await api.post('/auth/logout');
+  },
+
+  async forgotPassword(email: string) {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async resetPassword(email: string, otp: string, password: string, passwordConfirmation: string) {
+    const response = await api.post('/auth/reset-password', {
+      email,
+      otp,
+      password,
+      password_confirmation: passwordConfirmation,
+    });
+    return response.data;
   },
 };

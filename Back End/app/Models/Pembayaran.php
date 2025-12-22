@@ -41,6 +41,16 @@ class Pembayaran extends Model
         'paid_at' => 'datetime',
     ];
 
+    protected $appends = ['bukti_pembayaran_url'];
+
+    public function getBuktiPembayaranUrlAttribute()
+    {
+        if ($this->bukti_pembayaran_path) {
+            return asset('storage/' . $this->bukti_pembayaran_path);
+        }
+        return null;
+    }
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');

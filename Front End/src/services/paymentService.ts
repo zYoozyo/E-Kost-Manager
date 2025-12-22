@@ -69,10 +69,14 @@ export interface OwnerPaymentApi {
     } | null;
   } | null;
   nominal_tagihan: number;
+  nominal_dibayar?: number | null;
   status: PaymentStatus;
   due_date: string | null;
   created_at: string;
   updated_at: string;
+  bukti_pembayaran_path?: string | null;
+  bukti_pembayaran_url?: string | null;
+  catatan?: string | null;
 }
 
 export interface OwnerPaymentSummary {
@@ -113,6 +117,26 @@ export const paymentService = {
     return response.data.data;
   },
 
+  async uploadPaymentProof(
+    id: number,
+    file: File,
+    nominal_dibayar?: number,
+  ): Promise<PaymentHistoryItem> {
+    const formData = new FormData();
+    formData.append('bukti', file);
+    if (nominal_dibayar) {
+      formData.append('nominal_dibayar', nominal_dibayar.toString());
+    }
+
+    const response = await api.post<{
+      success: boolean;
+      message: string;
+      data: PaymentHistoryItem;
+    }>(`/payments/${id}/proof`, formData);
+
+    return response.data.data;
+  },
+
   async getOwnerPayments(params?: {
     status?: PaymentStatus;
     search?: string;
@@ -144,6 +168,50 @@ export const paymentService = {
         total: payload?.data?.total ?? payload?.data?.data?.length ?? 0,
       },
     };
+  },
+
+  async getAdminPayments(params?: {
+    status?: PaymentStatus;
+    search?: string;
+    page?: number;
+    per_page?: number;
+  }): Promise<OwnerPaymentsResult> {
+    try {
+      // Try admin endpoint first
+      const response = await api.get<{
+        success: boolean;
+        data: {
+          data: OwnerPaymentApi[];
+          current_page: number;
+          last_page: number;
+          per_page: number;
+          total: number;
+        };
+        summary?: OwnerPaymentSummary;
+      }>('/admin/payments', {
+        params,
+      });
+
+      const payload = response.data;
+      return {
+        payments: payload?.data?.data ?? [],
+        summary: payload.summary ?? null,
+        meta: {
+          current_page: payload?.data?.current_page ?? 1,
+          last_page: payload?.data?.last_page ?? 1,
+          per_page: payload?.data?.per_page ?? (params?.per_page ?? 15),
+          total: payload?.data?.total ?? payload?.data?.data?.length ?? 0,
+        },
+      };
+    } catch (error: any) {
+      // If admin endpoint fails (404 or 403), fallback to regular payments endpoint
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        console.log('Admin payments endpoint not available, falling back to regular payments endpoint');
+        return this.getOwnerPayments(params);
+      }
+      // Re-throw other errors
+      throw error;
+    }
   },
 
   /**

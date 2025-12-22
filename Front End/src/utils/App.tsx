@@ -6,6 +6,9 @@ import { ProtectedRoute } from '../components/ProtectedRoute';
 import { LoginPage } from '../pages/LoginPage';
 import { AuthLoginPage } from '../pages/AuthLoginPage';
 import { AuthSignupPage } from '../pages/AuthSignupPage';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import VerifyOTPPage from '../pages/VerifyOTPPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
 import { AdminProfilePage } from '../pages/admin/AdminProfilePage';
 import { AdminFacilitiesPage } from '../pages/admin/AdminFacilitiesPage';
@@ -28,6 +31,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/" element={<LoginPage />} />
       <Route path="/auth/login" element={<AuthLoginPage />} />
       <Route path="/auth/signup" element={<AuthSignupPage />} />
+      <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/auth/verify-otp" element={<VerifyOTPPage />} />
+      <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
       <Route
         path="/admin"

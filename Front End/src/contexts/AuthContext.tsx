@@ -22,21 +22,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check if user is logged in on app start
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
 
         // Check backend jika token ada
         if (token) {
+          console.log('AuthContext checkAuth: Token found, fetching profile...');
           try {
             const userData = await authService.getProfile();
+            console.log('AuthContext checkAuth: Profile fetched successfully:', userData);
+            console.log('AuthContext checkAuth: User role:', userData?.role);
             setUser(userData);
           } catch (error) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            console.log('AuthContext checkAuth: Error fetching profile:', error);
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
           }
+        } else {
+          console.log('AuthContext checkAuth: No token found');
         }
       } catch (error) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
       } finally {
         setIsLoading(false);
       }
@@ -48,11 +54,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await authService.login(email, password);
+      
+      // Debug: Log response structure
+      console.log('AuthContext login response:', response);
+      console.log('User role from response:', response.user?.role);
+      
       // Simpan token terlebih dahulu agar request berikutnya terautentikasi
-      localStorage.setItem('token', response.token);
+      sessionStorage.setItem('token', response.token);
+      console.log('Token saved to sessionStorage:', response.token?.substring(0, 20) + '...');
 
       // Setelah login, ambil profil terbaru dari backend (termasuk avatar URL)
       const userData = await authService.getProfile();
+      console.log('User data from getProfile:', userData);
+      console.log('User role from profile:', userData?.role);
+      console.log('Complete user object:', JSON.stringify(userData, null, 2));
+      
       setUser(userData);
       return userData;
     } catch (error) {
@@ -65,12 +81,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     if (MOCK_AUTH) {
       setUser(null);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       return;
     }
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setUser(null);
   };
 

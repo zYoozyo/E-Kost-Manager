@@ -6,8 +6,21 @@ import { invitationService } from '../services/invitationService';
 
 export const AcceptInvitePage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') || '';
   const navigate = useNavigate();
+
+  // Get token from URL params (support both ?token=xxx and #token=xxx)
+  const tokenFromQuery = searchParams.get('token') || '';
+  const tokenFromHash = new URLSearchParams(window.location.hash.substring(1)).get('token') || '';
+  const token = tokenFromQuery || tokenFromHash;
+  
+  console.log('AcceptInvitePage - Full URL:', window.location.href);
+  console.log('AcceptInvitePage - Pathname:', window.location.pathname);
+  console.log('AcceptInvitePage - Search:', window.location.search);
+  console.log('AcceptInvitePage - Hash:', window.location.hash);
+  console.log('AcceptInvitePage - Token from query:', tokenFromQuery);
+  console.log('AcceptInvitePage - Token from hash:', tokenFromHash);
+  console.log('AcceptInvitePage - Final token:', token);
+  console.log('AcceptInvitePage - All search params:', Object.fromEntries(searchParams.entries()));
 
   const [invitation, setInvitation] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,8 +32,11 @@ export const AcceptInvitePage: React.FC = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.log('AcceptInvitePage - useEffect triggered, token:', token);
+    
     if (!token) {
-      setError('Token undangan tidak ditemukan');
+      console.error('AcceptInvitePage - No token found in URL');
+      setError('Token undangan tidak ditemukan. Pastikan link undangan lengkap.');
       setLoading(false);
       return;
     }
@@ -30,15 +46,28 @@ export const AcceptInvitePage: React.FC = () => {
 
   const validateToken = async () => {
     try {
+      console.log('AcceptInvitePage - Validating token:', token);
+      setLoading(true);
+      setError('');
+      
       const response = await invitationService.validateToken(token);
+      console.log('AcceptInvitePage - Validation response:', response);
       
       if (response.success) {
         setInvitation(response.data);
+        console.log('AcceptInvitePage - Invitation data:', response.data);
       } else {
-        setError(response.message || 'Undangan tidak valid');
+        const errorMsg = response.message || 'Undangan tidak valid';
+        console.error('AcceptInvitePage - Validation failed:', errorMsg);
+        setError(errorMsg);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Undangan tidak valid atau sudah kedaluwarsa');
+      console.error('AcceptInvitePage - Validation error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Undangan tidak valid atau sudah kedaluwarsa';
+      setError(errorMsg);
+      toast.error(errorMsg, {
+        duration: 5000,
+      });
     } finally {
       setLoading(false);
     }
@@ -61,22 +90,37 @@ export const AcceptInvitePage: React.FC = () => {
     setSubmitting(true);
 
     try {
-      await invitationService.acceptInvitation({
+      const response = await invitationService.acceptInvitation({
         token,
         password,
         password_confirmation: confirmPassword,
       });
 
-      toast.success('Akun berhasil dibuat! Silakan login.');
+      console.log('Invitation accepted successfully:', response);
       
-      // Redirect ke halaman login
+      toast.success('Akun berhasil dibuat! Mengalihkan ke halaman login...', {
+        duration: 3000,
+      });
+      
+      // Redirect ke halaman login dengan email yang sudah diisi
       setTimeout(() => {
-        navigate('/auth/login', { state: { email: invitation?.invitation?.email } });
-      }, 1500);
+        const email = invitation?.invitation?.email || response.data?.user?.email;
+        console.log('Redirecting to login with email:', email);
+        navigate('/auth/login', { 
+          state: { 
+            email: email,
+            message: 'Akun Anda berhasil dibuat. Silakan login dengan email dan password yang baru saja Anda buat.'
+          } 
+        });
+      }, 2000);
 
     } catch (err: any) {
       console.error('Error accepting invitation:', err);
-      setError(err.response?.data?.message || 'Gagal membuat akun. Silakan coba lagi.');
+      const errorMessage = err.response?.data?.message || err.message || 'Gagal membuat akun. Silakan coba lagi.';
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        duration: 5000,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -101,15 +145,41 @@ export const AcceptInvitePage: React.FC = () => {
             <AlertCircle className="w-10 h-10 text-red-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Undangan Tidak Valid</h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-4">
             {error || 'Token undangan tidak ditemukan atau sudah kedaluwarsa.'}
           </p>
-          <button
-            onClick={() => navigate('/auth/login')}
-            className="w-full bg-yellow-400 hover:bg-yellow-500 text-navy-900 px-6 py-3 rounded-lg font-semibold transition-colors"
-          >
-            Kembali ke Halaman Login
-          </button>
+          {!token && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 text-left">
+              <p className="text-sm text-yellow-800 mb-2">
+                <strong>Tips:</strong>
+              </p>
+              <ul className="text-xs text-yellow-700 list-disc list-inside space-y-1">
+                <li>Pastikan Anda mengklik link lengkap dari email undangan</li>
+                <li>Link harus berformat: <code className="bg-yellow-100 px-1 rounded">/accept-invite?token=...</code></li>
+                <li>Jika link tidak lengkap, salin seluruh link dari email dan buka di browser</li>
+              </ul>
+            </div>
+          )}
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate('/auth/login')}
+              className="w-full bg-yellow-400 hover:bg-yellow-500 text-navy-900 px-6 py-3 rounded-lg font-semibold transition-colors"
+            >
+              Kembali ke Halaman Login
+            </button>
+            {token && (
+              <button
+                onClick={() => {
+                  setError('');
+                  setLoading(true);
+                  validateToken();
+                }}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+              >
+                Coba Lagi
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );

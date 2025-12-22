@@ -15,6 +15,8 @@ export interface OwnerPaymentSettings {
   bank_account_number: string | null;
   bank_account_holder: string | null;
   qris_payload: string | null;
+  qris_image_path?: string | null;
+  qris_image_url?: string | null;
 }
 
 export interface TenantPaymentSettings {
@@ -28,23 +30,40 @@ export interface TenantPaymentSettings {
     bank_account_number: string | null;
     bank_account_holder: string | null;
     qris_payload: string | null;
+    qris_image_url?: string | null;
   } | null;
 }
 
 export const ownerPaymentSettingsService = {
   async get(): Promise<OwnerPaymentSettings | null> {
+    console.log('Fetching admin payment settings from /admin/payment-settings');
     const response = await api.get<{ success: boolean; data: OwnerPaymentSettings | null }>(
-      '/owner/payment-settings',
+      '/admin/payment-settings',
     );
+    console.log('Payment settings response:', response.data);
     return response.data.data ?? null;
   },
 
-  async update(data: Partial<OwnerPaymentSettings>): Promise<OwnerPaymentSettings> {
-    const response = await api.put<{
-      success: boolean;
-      message: string;
-      data: OwnerPaymentSettings;
-    }>('/owner/payment-settings', data);
+  async update(data: Partial<OwnerPaymentSettings> | FormData): Promise<OwnerPaymentSettings> {
+    let response;
+    if (data instanceof FormData) {
+      // For file uploads, use POST (Laravel handles file uploads via POST)
+      response = await api.post<{
+        success: boolean;
+        message: string;
+        data: OwnerPaymentSettings;
+      }>('/admin/payment-settings', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } else {
+      response = await api.put<{
+        success: boolean;
+        message: string;
+        data: OwnerPaymentSettings;
+      }>('/admin/payment-settings', data);
+    }
 
     return response.data.data;
   },

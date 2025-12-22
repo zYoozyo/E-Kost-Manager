@@ -15,7 +15,7 @@ export const AdminFinancePage: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        const paymentsData = await paymentService.getOwnerPayments();
+        const paymentsData = await paymentService.getAdminPayments();
         setPaymentsResult(paymentsData);
       } catch (err: any) {
         console.error('Failed to load finance data', err);
@@ -107,48 +107,50 @@ export const AdminFinancePage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-sm p-8">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-yellow-500 rounded-lg">
-              <CreditCard className="w-6 h-6 text-white" />
+      <div className="space-y-4 sm:space-y-6">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 md:p-8">
+          {/* Header - Responsive */}
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="p-2 sm:p-3 bg-yellow-500 rounded-lg">
+              <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">Keuangan</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Keuangan</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Stats Cards - Responsive */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
             {stats.map((stat, idx) => {
               const Icon = stat.icon;
               return (
-                <div key={idx} className="bg-gray-50 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 ${stat.color} rounded-lg`}>
-                      <Icon className="w-6 h-6 text-white" />
+                <div key={idx} className="bg-gray-50 rounded-lg p-3 sm:p-4 md:p-6">
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <div className={`p-2 sm:p-3 ${stat.color} rounded-lg`}>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
                     </div>
-                    <span className={`text-sm font-semibold ${
+                    <span className={`text-xs sm:text-sm font-semibold ${
                       stat.trend.startsWith('+') ? 'text-green-600' : 'text-red-600'
                     }`}>
                       {stat.trend}
                     </span>
                   </div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">{stat.value}</p>
                 </div>
               );
             })}
           </div>
 
-          {/* Modern Charts Section */}
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Modern Charts Section - Responsive */}
+          <div className="mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Area Chart - Revenue Trend */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-6">
+            <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                 <div className="p-2 bg-blue-500 rounded-lg">
-                  <TrendingUp className="w-5 h-5 text-white" />
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Tren Pendapatan</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Tren Pendapatan</h3>
               </div>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
                 <AreaChart data={monthlyData}>
                   <defs>
                     <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
@@ -168,7 +170,10 @@ export const AdminFinancePage: React.FC = () => {
                     tickFormatter={(value) => `Rp${(value / 1000000).toFixed(0)}M`}
                   />
                   <Tooltip 
-                    formatter={(value: number) => [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan']}
+                    formatter={(value: number | undefined) => {
+                      if (value === undefined || value === null) return ['Rp 0', 'Pendapatan'];
+                      return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
+                    }}
                     contentStyle={{ 
                       backgroundColor: 'white', 
                       border: '1px solid #E5E7EB',
@@ -189,14 +194,14 @@ export const AdminFinancePage: React.FC = () => {
             </div>
 
             {/* Bar Chart - Monthly Comparison */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-6">
+            <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                 <div className="p-2 bg-green-500 rounded-lg">
-                  <BarChart3 className="w-5 h-5 text-white" />
+                  <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Pendapatan Bulanan</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Pendapatan Bulanan</h3>
               </div>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 
@@ -210,7 +215,10 @@ export const AdminFinancePage: React.FC = () => {
                     tickFormatter={(value) => `Rp${(value / 1000000).toFixed(0)}M`}
                   />
                   <Tooltip 
-                    formatter={(value: number) => [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan']}
+                    formatter={(value: number | undefined) => {
+                      if (value === undefined || value === null) return ['Rp 0', 'Pendapatan'];
+                      return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
+                    }}
                     contentStyle={{ 
                       backgroundColor: 'white', 
                       border: '1px solid #E5E7EB',
@@ -228,43 +236,6 @@ export const AdminFinancePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Summary Cards */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">Rata-rata Pendapatan</span>
-              </div>
-              <p className="text-xl font-bold text-blue-900">
-                Rp {Math.round(totalRevenue / Math.max(monthlyData.filter(m => m.income > 0).length, 1)).toLocaleString('id-ID')}
-              </p>
-              <p className="text-xs text-blue-600 mt-1">per bulan</p>
-            </div>
-            
-            <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">Bulan Terbaik</span>
-              </div>
-              <p className="text-xl font-bold text-green-900">
-                {monthlyData.reduce((best, current) => current.income > best.income ? current : best).month}
-              </p>
-              <p className="text-xs text-green-600 mt-1">
-                Rp {Math.max(...monthlyData.map(m => m.income)).toLocaleString('id-ID')}
-              </p>
-            </div>
-            
-            <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-              <div className="flex items-center gap-2 mb-2">
-                <CreditCard className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-medium text-purple-800">Total Transaksi</span>
-              </div>
-              <p className="text-xl font-bold text-purple-900">
-                {payments.filter(p => p.status === 'paid').length}
-              </p>
-              <p className="text-xs text-purple-600 mt-1">pembayaran lunas</p>
-            </div>
-          </div>
         </div>
       </div>
     </AdminLayout>
